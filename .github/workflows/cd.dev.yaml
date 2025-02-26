@@ -34,8 +34,8 @@ jobs:
             cd boilerplate/python/dev
             tar -xzf /tmp/python/python-dev.tar.gz -C .
             rm -f /tmp/python/python-dev.tar.gz
-            cd app
             source venv/bin/activate
+            cd app
             pip install -r requirements.txt
             alembic revision --autogenerate
             alembic upgrade head
