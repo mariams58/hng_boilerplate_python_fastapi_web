@@ -69,3 +69,33 @@ def test_get_organisations_invitations_success(client, db_session_mock):
         mock_fetch_all_invitations.assert_called_with(db_session_mock)
 
 
+@pytest.fixture
+def test_get_organisations_invitations_not_admin(client, db_session_mock):
+    """
+    Test not-admin user access to organisation invites
+    """
+    def mock_get_current_user():
+        return User(
+        id=str(uuid7()),
+        email="testuser@gmail.com",
+        password=user_service.hash_password("Testpassword@123"),
+        first_name="Test",
+        last_name="User",
+        is_active=True,
+        is_superadmin=False,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    
+    app.dependency_overrides[user_service.get_current_super_admin] = mock_get_current_user
+    
+    response = client.get("/api/v1/organisations/invites")
+    
+    assert response.status_code == 400
+    assert response.json() == {
+        "status_code": 400,
+        "message": "Unable to retrieve organisations invites."
+    }
+
+
+
