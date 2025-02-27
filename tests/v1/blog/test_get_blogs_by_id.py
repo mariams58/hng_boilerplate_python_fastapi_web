@@ -35,6 +35,7 @@ def create_mock_blog(id: str, author_id: str, title: str, content: str):
         "tags": "test,blog",
         "is_deleted": False,
         "excerpt": "Test Excerpt",
+        "views": 0, # Initialise view count
         "created_at": timeinfo.isoformat(),
         "updated_at": timeinfo.isoformat()
     }
