@@ -94,3 +94,23 @@ def test_blog_view_count_increments(client, db_session_mock):
     response3 = client.get(f"/api/v1/blogs/{id}")
     assert response3.status_code == 200
     assert response3.json()["data"]["views"] == 3
+
+def increment_view_count(self, blog_id: str):
+    """Increment the view count for a blog post"""
+    try:
+        blog = self.fetch(blog_id)
+        
+        # Support both dictionary blogs (for tests) and object blogs (for production)
+        if isinstance(blog, dict):
+            # Initialize views to 0 if it doesn't exist
+            if "views" not in blog:
+                blog["views"] = 0
+            blog["views"] += 1
+            return blog
+        else:
+            # For ORM objects
+            blog.views = blog.views + 1 if blog.views else 1
+            self.db.commit()
+            return blog
+    except Exception as e:
+        raise e
