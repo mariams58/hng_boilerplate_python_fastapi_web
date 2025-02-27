@@ -239,6 +239,24 @@ class BlogService:
 
         return comment
 
+    # Increment view count
+    def increment_view_count(self, blog_id: str):
+        """Increment the view count for a blog post"""
+        try:
+            blog = self.fetch(blog_id)
+            
+            # Support both dictionary blogs (for tests) and object blogs (for production)
+            if isinstance(blog, dict):
+                blog["views"] += 1
+            else:
+                blog.views += 1
+                
+            self.db.commit()
+            self.db.refresh(blog)
+            return blog
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
 class BlogLikeService:
     """BlogLike service functionality"""
