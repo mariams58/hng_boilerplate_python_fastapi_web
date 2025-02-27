@@ -7,8 +7,8 @@ def success_response(status_code: int, message: str, data: Optional[dict] = None
     '''Returns a JSON response for success responses'''
 
     response_data = {
-        "status": True,
         "status_code": status_code,
+        "success": True,
         "message": message
     }
     
