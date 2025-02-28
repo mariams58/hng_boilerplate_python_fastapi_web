@@ -63,14 +63,14 @@ notification = Notification(
 )
 
 
-def test_mark_notification_as_read(client, db_session_mock):
+def test_mark_notifications_as_read(client, db_session_mock):
     db_session_mock.query().filter().all.return_value = [user, notification]
     headers = {"authorization": f"Bearer {access_token}"}
     response = client.patch(f"/api/v1/notifications/{notification.id}", headers=headers)
     assert response.status_code == 200
 
 
-def test_mark_notification_as_read_unauthenticated_user(client, db_session_mock):
+def test_mark_notifications_as_read_unauthenticated_user(client, db_session_mock):
     db_session_mock.query().filter().all.return_value = [notification]
     response = client.patch(f"/api/v1/notifications/{notification.id}")
     assert response.status_code == 401
