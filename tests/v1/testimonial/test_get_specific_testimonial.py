@@ -88,37 +88,6 @@ def test_get_user_testimonials_unauthorized():
     data = response.json()
     assert data["message"] == "Not authenticated"
 
-# def test_get_user_testimonials_wrong_user(mock_user_service, mock_db_session):
-#     """Test accessing testimonials with different user's token"""
-#     # Create two users
-#     user1 = create_mock_user(mock_user_service, mock_db_session)
-#     user2 = User(
-#         id=str(uuid7()),
-#         email="user2@example.com",
-#         password=user_service.hash_password("TestPassword123!"),
-#         first_name="Test2",
-#         last_name="User2",
-#         is_active=True,
-#         created_at=datetime.now(timezone.utc),
-#         updated_at=datetime.now(timezone.utc)
-#     )
-    
-#     # Get auth token for user2
-#     access_token = user_service.create_access_token(str(user2.id))
-    
-#     # Override dependency to return user2
-#     app.dependency_overrides[user_service.get_current_user] = lambda: user2
-    
-#     # Try to access user1's testimonials
-#     response = client.get(
-#         f"/api/v1/testimonials/user/{user1.id}",
-#         headers={"Authorization": f"Bearer {access_token}"}
-#     )
-    
-#     assert response.status_code == 403
-#     data = response.json()
-#     assert data["message"] == "You can only view your own testimonials"
-
 def test_get_user_testimonials_no_testimonials(mock_user_service, mock_db_session):
     """Test when user has no testimonials"""
     # Create mock user
