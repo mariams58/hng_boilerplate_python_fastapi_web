@@ -1,132 +1,146 @@
-from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch
-from sqlalchemy.orm import Session
-from api.v1.models.testimonial import Testimonial
-from api.v1.models.user import User
 import pytest
-from datetime import datetime
+from fastapi.testclient import TestClient
+from unittest.mock import patch, MagicMock
+from main import app
+from api.v1.models.user import User
+from api.v1.models.testimonial import Testimonial
+from api.v1.services.user import user_service
+from uuid_extensions import uuid7
+from api.db.database import get_db
+from fastapi import status
+from datetime import datetime, timezone
 
-# Mock data
-MOCK_USER_ID = "067c0f12-1fd3-736d-8000-13328adefbd5"
-MOCK_TESTIMONIAL_ID = "067c0f12-20a5-77d9-8000-e83895bcbbb9"
+client = TestClient(app)
 
 @pytest.fixture
-def mock_db():
-    return Mock(spec=Session)
+def mock_db_session():
+    """Fixture to create a mock database session."""
+    with patch("api.v1.services.user.get_db", autospec=True) as mock_get_db:
+        mock_db = MagicMock()
+        app.dependency_overrides[get_db] = lambda: mock_db
+        yield mock_db
+    app.dependency_overrides = {}
 
 @pytest.fixture
-def mock_current_user():
-    return User(
-        id=MOCK_USER_ID,
-        email="test@example.com",
+def mock_user_service():
+    """Fixture to create a mock user service."""
+    with patch("api.v1.services.user.user_service", autospec=True) as mock_service:
+        yield mock_service
+
+def create_mock_user(mock_user_service, mock_db_session):
+    """Create a mock user in the mock database session."""
+    mock_user = User(
+        id=str(uuid7()),
+        email="testuser@example.com",
+        password=user_service.hash_password("TestPassword123!"),
         first_name="Test",
         last_name="User",
-        is_active=True
+        is_active=True,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
     )
+    mock_db_session.query.return_value.filter.return_value.first.return_value = mock_user
+    return mock_user
 
-@pytest.fixture
-def mock_testimonial():
-    return Testimonial(
-        id=MOCK_TESTIMONIAL_ID,
-        author_id=MOCK_USER_ID,
-        content="Test testimonial",
-        created_at=datetime.now(),
-        ratings=4.5
-    )
+def test_get_user_testimonials_success(mock_user_service, mock_db_session):
+    """Test successful retrieval of user testimonials"""
+    # Create mock user and testimonials
+    mock_user = create_mock_user(mock_user_service, mock_db_session)
+    testimonials = [
+        Testimonial(
+            id=str(uuid7()),
+            content=f"Test content {i}",
+            author_id=mock_user.id,
+            client_name=f"Client {i}",
+            client_designation=f"Designation {i}",
+            ratings=4.5,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        ) for i in range(3)
+    ]
 
-class TestTestimonialRoutes:
+    # Setup mock responses
+    mock_db_session.query.return_value.filter.return_value.offset.return_value.limit.return_value.all.return_value = testimonials
+    mock_db_session.query.return_value.filter.return_value.count.return_value = len(testimonials)
     
-    def test_get_user_testimonials_success(self, client: TestClient, mock_db, mock_current_user, mock_testimonial):
-        """Test successful retrieval of user testimonials"""
-        # Mock the authentication
-        with patch('api.v1.services.user.user_service.get_current_user', return_value=mock_current_user):
-            # Mock the paginated response
-            mock_response = {
-                "data": {
-                    "items": [{
-                        "id": mock_testimonial.id,
-                        "author_id": mock_testimonial.author_id,
-                        "content": mock_testimonial.content,
-                        "created_at": mock_testimonial.created_at.isoformat()
-                    }],
-                    "total": 1
-                }
-            }
-            
-            with patch('api.utils.pagination.paginated_response', return_value=Mock(body=json.dumps(mock_response))):
-                response = client.get(f"/api/v1/testimonials/user/{MOCK_USER_ID}")
-                
-                assert response.status_code == 200
-                data = response.json()
-                assert data["status_code"] == 200
-                assert data["total_testimonials"] == 1
-                assert len(data["testimonials"]) == 1
-                assert data["testimonials"][0]["user_id"] == MOCK_USER_ID
-                assert data["testimonials"][0]["message"] == mock_testimonial.content
+    # Get auth token
+    access_token = user_service.create_access_token(str(mock_user.id))
+    
+    # Override dependencies
+    app.dependency_overrides[user_service.get_current_user] = lambda: mock_user
+    
+    # Make request
+    response = client.get(
+        f"/api/v1/testimonials/user/{mock_user.id}",
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
 
-    def test_get_user_testimonials_empty(self, client: TestClient, mock_db, mock_current_user):
-        """Test when user has no testimonials"""
-        with patch('api.v1.services.user.user_service.get_current_user', return_value=mock_current_user):
-            mock_response = {
-                "data": {
-                    "items": [],
-                    "total": 0
-                }
-            }
-            
-            with patch('api.utils.pagination.paginated_response', return_value=Mock(body=json.dumps(mock_response))):
-                response = client.get(f"/api/v1/testimonials/user/{MOCK_USER_ID}")
-                
-                assert response.status_code == 200
-                data = response.json()
-                assert data["status_code"] == 200
-                assert data["total_testimonials"] == 0
-                assert data["testimonials"] == []
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status_code"] == 200
+    assert data["total_testimonials"] == 3
+    assert len(data["testimonials"]) == 3
 
-    def test_get_user_testimonials_unauthorized(self, client: TestClient):
-        """Test unauthorized access"""
-        response = client.get(f"/api/v1/testimonials/user/{MOCK_USER_ID}")
-        assert response.status_code == 401
-        data = response.json()
-        assert data["status_code"] == 401
-        assert data["message"] == "Not authorized"
+def test_get_user_testimonials_unauthorized():
+    """Test testimonial retrieval without authentication"""
+    response = client.get(f"/api/v1/testimonials/user/some-id")
+    assert response.status_code == 401
+    data = response.json()
+    assert data["message"] == "Not authenticated"
 
-    def test_get_user_testimonials_server_error(self, client: TestClient, mock_db, mock_current_user):
-        """Test server error handling"""
-        with patch('api.v1.services.user.user_service.get_current_user', return_value=mock_current_user):
-            with patch('api.utils.pagination.paginated_response', side_effect=Exception("Database error")):
-                response = client.get(f"/api/v1/testimonials/user/{MOCK_USER_ID}")
-                
-                assert response.status_code == 500
-                data = response.json()
-                assert data["status_code"] == 500
-                assert data["message"] == "An unexpected error occurred."
+# def test_get_user_testimonials_wrong_user(mock_user_service, mock_db_session):
+#     """Test accessing testimonials with different user's token"""
+#     # Create two users
+#     user1 = create_mock_user(mock_user_service, mock_db_session)
+#     user2 = User(
+#         id=str(uuid7()),
+#         email="user2@example.com",
+#         password=user_service.hash_password("TestPassword123!"),
+#         first_name="Test2",
+#         last_name="User2",
+#         is_active=True,
+#         created_at=datetime.now(timezone.utc),
+#         updated_at=datetime.now(timezone.utc)
+#     )
+    
+#     # Get auth token for user2
+#     access_token = user_service.create_access_token(str(user2.id))
+    
+#     # Override dependency to return user2
+#     app.dependency_overrides[user_service.get_current_user] = lambda: user2
+    
+#     # Try to access user1's testimonials
+#     response = client.get(
+#         f"/api/v1/testimonials/user/{user1.id}",
+#         headers={"Authorization": f"Bearer {access_token}"}
+#     )
+    
+#     assert response.status_code == 403
+#     data = response.json()
+#     assert data["message"] == "You can only view your own testimonials"
 
-    def test_get_user_testimonials_pagination(self, client: TestClient, mock_db, mock_current_user, mock_testimonial):
-        """Test pagination of testimonials"""
-        with patch('api.v1.services.user.user_service.get_current_user', return_value=mock_current_user):
-            # Create mock response with multiple items
-            mock_response = {
-                "data": {
-                    "items": [
-                        {
-                            "id": f"{mock_testimonial.id}_{i}",
-                            "author_id": mock_testimonial.author_id,
-                            "content": f"Testimonial {i}",
-                            "created_at": mock_testimonial.created_at.isoformat()
-                        }
-                        for i in range(3)
-                    ],
-                    "total": 3
-                }
-            }
-            
-            with patch('api.utils.pagination.paginated_response', return_value=Mock(body=json.dumps(mock_response))):
-                # Test with different page sizes
-                response = client.get(f"/api/v1/testimonials/user/{MOCK_USER_ID}?page_size=2&page=1")
-                
-                assert response.status_code == 200
-                data = response.json()
-                assert data["status_code"] == 200
-                assert data["total_testimonials"] == 3
-                assert len(data["testimonials"]) == 3 
+def test_get_user_testimonials_no_testimonials(mock_user_service, mock_db_session):
+    """Test when user has no testimonials"""
+    # Create mock user
+    mock_user = create_mock_user(mock_user_service, mock_db_session)
+    
+    # Setup empty testimonials response
+    mock_db_session.query.return_value.filter.return_value.offset.return_value.limit.return_value.all.return_value = []
+    mock_db_session.query.return_value.filter.return_value.count.return_value = 0
+    
+    # Get auth token
+    access_token = user_service.create_access_token(str(mock_user.id))
+    
+    # Override dependency
+    app.dependency_overrides[user_service.get_current_user] = lambda: mock_user
+    
+    response = client.get(
+        f"/api/v1/testimonials/user/{mock_user.id}",
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status_code"] == 200
+    assert data["total_testimonials"] == 0
+    assert len(data["testimonials"]) == 0

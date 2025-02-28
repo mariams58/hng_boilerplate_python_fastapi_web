@@ -106,6 +106,17 @@ def get_user_testimonials(
 ):
     """Endpoint to get all testimonials for a specific user with pagination"""
     try:
+        # Only check if user is accessing their own testimonials
+        if user_id != str(current_user.id):
+            return {
+                "status_code": 403,
+                "message": "You can only view your own testimonials"
+            }
+
+        # Log the values to help debug
+        logger.info(f"Fetching testimonials for user_id: {user_id}")
+        logger.info(f"Current user id: {current_user.id}")
+        
         paginated_data = paginated_response(
             db=db,
             model=Testimonial,
@@ -114,14 +125,14 @@ def get_user_testimonials(
             filters={"author_id": user_id}
         )
         
-        # Extract the relevant data from the paginated response
+        # Log the paginated data to see what we're getting
+        logger.info(f"Paginated data: {paginated_data.body}")
+        
         response_data = json.loads(paginated_data.body)
         items = response_data["data"]["items"]
         
-        # Use the length of items array for total instead of the total from response
         total = len(items)
         
-        # Format testimonials according to the required structure
         testimonials = [
             {
                 "id": item["id"],
@@ -139,9 +150,9 @@ def get_user_testimonials(
         }
         
     except Exception as e:
-        # Log the error for debugging
-        logger.error(f"Error retrieving testimonials: {str(e)}")
+        # Log the full error with traceback
+        logger.exception(f"Error retrieving testimonials: {str(e)}")
         return {
             "status_code": 500,
-            "message": "An unexpected error occurred."
+            "message": f"An unexpected error occurred: {str(e)}"  # Include error message in response
         }
