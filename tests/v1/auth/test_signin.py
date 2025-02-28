@@ -1,7 +1,6 @@
-from api.v1.models.newsletter import Newsletter
+from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock
 from main import app
 from api.v1.models.user import User
 from api.v1.services.user import user_service
@@ -12,25 +11,33 @@ from datetime import datetime, timezone
 
 client = TestClient(app)
 
+
 # Mock the database dependency
 @pytest.fixture
 def db_session_mock():
     db_session = MagicMock()
     yield db_session
 
+
 # Override the dependency with the mock
 @pytest.fixture(autouse=True)
 def override_get_db(db_session_mock):
     def get_db_override():
         yield db_session_mock
-    
+
     app.dependency_overrides[get_db] = get_db_override
     yield
-    # Clean up after the test by removing the override
     app.dependency_overrides = {}
 
 
-def test_user_login(db_session_mock):
+# ✅ Mock the background task `send_login_notification`
+@pytest.fixture
+def mock_send_login_notification():
+    with patch("api.v1.routes.auth.send_login_notification") as mock_notification:
+        yield mock_notification
+
+
+def test_user_login(db_session_mock, mock_send_login_notification):
     """Test for successful inactive user login."""
 
     # Create a mock user
@@ -53,4 +60,6 @@ def test_user_login(db_session_mock):
         "password": "Testpassword@123"
     })
     response = login.json()
+
     assert response.get("status_code") == status.HTTP_200_OK
+    mock_send_login_notification.assert_called_once()  # Ensure the email function was called
