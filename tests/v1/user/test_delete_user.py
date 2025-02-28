@@ -65,9 +65,9 @@ def test_delete_user(mock_db_session, user_service_mock, mock_token_verification
     assert response.json() == {
         "message": "User successfully deleted",
         "success": True,
-        "status_code": 200
+        "status": "success"
+        "data": {},
     }
-
 
 def test_delete_user_not_superadmin(mock_db_session, user_service_mock):
     """
@@ -114,5 +114,6 @@ def test_delete_own_account(mock_db_session, user_service_mock, mock_own_account
     assert response.json() == {
         "message": "User successfully deleted",
         "success": True,
-        "status_code": 200
+        "status": "success"
+        "data": {},
     }
