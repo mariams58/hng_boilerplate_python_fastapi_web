@@ -123,16 +123,22 @@ class OrganisationService(Service):
 
 
     def fetch_all_invitations(self, db: Session, page: int, page_size: int):
+        """Fetch all invitations with pagination"""
+
         logging.info(f"Fetching invitations: page={page}, page_size={page_size}")
+
         try:
             query = db.query(Invitation).offset((page - 1) * page_size).limit(page_size)
             invitations = query.all()
             total_count = db.query(Invitation).count()
+
             logging.info(f"Fetched {len(invitations)} invitations, total count: {total_count}")
             return invitations, total_count
+
         except Exception as e:
             logging.error(f"Error in fetch_all_invitations: {str(e)}")
-        raise
+            raise HTTPException(status_code=500, detail="An error occurred while fetching invitations")
+
 
 
     def update(self, db: Session, id: str, schema, current_user: User):
