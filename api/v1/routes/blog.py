@@ -214,7 +214,7 @@ async def delete_blog_post(
     blog_service = BlogService(db=db)
     blog_service.delete(blog_id=id)
 
-@blog.put("/{blog_id}/soft_delete", status_code=200)
+@blog.put("/{blog_id}/soft_delete")
 async def archive_blog_post(
     blog_id: str,
     db: Session = Depends(get_db),
@@ -233,6 +233,7 @@ async def archive_blog_post(
     
     blog_post.is_deleted = True
     db.commit()
+    db.refresh(blog_post)
 
     return success_response(
         message="Blog post archived successfully!",
