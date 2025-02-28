@@ -116,10 +116,3 @@ push your alembic migrations.
 
 
 
-
-<!-- {
-  "email": "eniolaomotee@yahoo.com",
-  "password": "1111234aA?",
-  "first_name": "omotee",
-  "last_name": "omotee"
-} -->
