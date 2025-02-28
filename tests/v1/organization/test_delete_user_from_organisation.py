@@ -11,9 +11,8 @@ from api.utils.success_response import success_response
 from api.v1.services.user import user_service
 from api.v1.models import User
 from api.v1.models.organisation import Organisation
-from api.v1.services.organisation import organisation_service
-from main import app
 
+from main import app
 
 
 def mock_get_current_admin():
@@ -37,6 +36,7 @@ def mock_org():
         name="Test Company",
     )
 
+
 @pytest.fixture
 def db_session_mock():
     db_session = MagicMock(spec=Session)
@@ -52,11 +52,14 @@ def client(db_session_mock):
 
 
 def test_remove_user_from_organisation_success(client, db_session_mock):
-    """Test to successfully remove a user from an organisation"""
+    """Test to successfully remove a user from an organisation by an admin"""
 
-    app.dependency_overrides[user_service.get_current_super_admin] = mock_get_current_admin
+    admin_user = mock_get_current_admin()
+    app.dependency_overrides[user_service.get_current_super_admin] = lambda: admin_user
 
-    with patch("api.v1.services.organisation.organisation_service.remove_user_from_organisation") as mock_remove:
+    with patch(
+        "api.v1.services.organisation.organisation_service.get_organisation_by_id"
+    ) as mock_remove:
         mock_remove.return_value = success_response(
             status_code=status.HTTP_200_OK,
             message="User successfully removed from organisation",
@@ -67,22 +70,25 @@ def test_remove_user_from_organisation_success(client, db_session_mock):
 
         response = client.delete(
             f"/api/v1/organisations/{org_id}/users/{user_id}",
-            headers={"Authorization": "Bearer token"},
+            headers={"Authorization": "Bearer admin_token"},
         )
 
         assert response.status_code == 200
         assert response.json() == {
             "message": "User successfully removed from organisation",
             "success": True,
-            "status_code": 200
+            "status_code": 200,
         }
+        mock_remove.assert_called_once()
 
 
 def test_remove_user_from_organisation_failure(client, db_session_mock):
-    """Test when the user is not in the organisation"""
+    """Test when the user is not in the organisation by an admin"""
 
-    app.dependency_overrides[user_service.get_current_super_admin] = mock_get_current_admin
+    admin_user = mock_get_current_admin()
+    app.dependency_overrides[user_service.get_current_super_admin] = lambda: admin_user
 
+    # Simulate that the user is not found in the organisation
     db_session_mock.execute.return_value.fetchone.return_value = None
 
     org_id = str(uuid7())
@@ -90,12 +96,8 @@ def test_remove_user_from_organisation_failure(client, db_session_mock):
 
     response = client.delete(
         f"/api/v1/organisations/{org_id}/users/{user_id}",
-        headers={"Authorization": "Bearer token"},
+        headers={"Authorization": "Bearer admin_token"},
     )
 
-    print("Response status code:", response.status_code)
-    print("Response content:", response.json())
-
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    
     assert response.json()["message"] == "User is not part of this organisation"
