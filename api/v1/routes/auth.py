@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -33,6 +34,10 @@ auth = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
   
 @auth.post("/register", status_code=status.HTTP_201_CREATED, response_model=auth_response)
 @limiter.limit("1000/minute")  # Limit to 1000 requests per minute per IP
@@ -154,7 +159,7 @@ def login(request: Request, login_request: LoginRequest, background_tasks: Backg
     refresh_token = user_service.create_refresh_token(user_id=user.id)
 
     # Background task for email notification
-    print("Adding send_login_notification to background tasks...")
+    logger.info(f"Queueing login notification for {user.email} in the background...")
     background_tasks.add_task(send_login_notification, user, request)
 
     response = auth_response(
