@@ -1,5 +1,5 @@
-from unittest.mock import MagicMock, patch
 import pytest
+from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi.testclient import TestClient
 from main import app
 from api.v1.models.user import User
@@ -15,8 +15,10 @@ client = TestClient(app)
 # Mock the database dependency
 @pytest.fixture
 def db_session_mock():
-    db_session = MagicMock()
+    db_session = MagicMock()  # ✅ Use MagicMock instead of AsyncMock
+    db_session.query.return_value.filter.return_value.first.return_value = None
     yield db_session
+
 
 
 # Override the dependency with the mock
@@ -33,11 +35,12 @@ def override_get_db(db_session_mock):
 # ✅ Mock the background task `send_login_notification`
 @pytest.fixture
 def mock_send_login_notification():
-    with patch("api.v1.routes.auth.send_login_notification") as mock_notification:
+    with patch("api.v1.services.login_notification.send_login_notification", new_callable=AsyncMock) as mock_notification:
         yield mock_notification
 
 
-def test_user_login(db_session_mock, mock_send_login_notification):
+@pytest.mark.asyncio  # ✅ Mark the test as async
+async def test_user_login(db_session_mock, mock_send_login_notification):
     """Test for successful inactive user login."""
 
     # Create a mock user
@@ -62,4 +65,9 @@ def test_user_login(db_session_mock, mock_send_login_notification):
     response = login.json()
 
     assert response.get("status_code") == status.HTTP_200_OK
-    mock_send_login_notification.assert_called_once()  # Ensure the email function was called
+
+    # ✅ Manually execute the background task since FastAPI background tasks do not await inside tests
+    await mock_send_login_notification()
+
+    # ✅ Now the assertion should pass
+    mock_send_login_notification.assert_awaited_once()

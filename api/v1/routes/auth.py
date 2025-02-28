@@ -154,6 +154,7 @@ def login(request: Request, login_request: LoginRequest, background_tasks: Backg
     refresh_token = user_service.create_refresh_token(user_id=user.id)
 
     # Background task for email notification
+    print("Adding send_login_notification to background tasks...")
     background_tasks.add_task(send_login_notification, user, request)
 
     response = auth_response(
