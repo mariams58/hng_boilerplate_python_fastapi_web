@@ -15,7 +15,7 @@ wishlist= APIRouter(prefix="/wishlist", tags=["Wishlist"])
 def add_to_wishlist(wishlist_data: WishlistCreate, db: Session = Depends(get_db), current_user: User = Depends(user_service.get_current_user)):
 	try:
 		wishlist_service.create(db, current_user.id, wishlist_data)
-		return success_response(status_code=201, message="Product added to waitlist successfully")
+		return success_response(status_code=201, message="Product added to wishlist successfully")
 	except ProductAlreadyInWishlistException:
 		raise HTTPException(status_code=400, detail="Product already in wishlist")
 	except ProductNotFoundException:
