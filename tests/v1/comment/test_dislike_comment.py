@@ -84,7 +84,7 @@ def test_dislike_comment(
         print(response.json())  # Print error message for more details
 
     assert response.status_code == 201, f"Expected status code 200, got {response.status_code}"
-    assert response.json()['message'] == "Comment disliked successfully!"
+    assert response.json()['message'] == "Dislike added successfully"
 
 def test_dislike_comment_twice(
     mock_db_session, 
