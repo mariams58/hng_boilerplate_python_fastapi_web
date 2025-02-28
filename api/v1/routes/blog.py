@@ -213,6 +213,33 @@ async def delete_blog_post(
     blog_service = BlogService(db=db)
     blog_service.delete(blog_id=id)
 
+@blog.put("/{id}/soft_delete", status_code=200)
+async def archive_blog_post(
+    id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(user_service.get_current_super_admin),
+):
+    
+    """Endpoint to archive/soft-delete a blog post"""
+
+    blog_service = BlogService(db=db)
+    blog_post = blog_service.fetch(blog_id=id)
+    if not blog_post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    #check if admin/ authorized user
+    if blog_post.author_id != current_user.id and not current_user.is_superadmin:
+        raise HTTPException(status_code=401, detail="You don't have permission to perform this action")
+    
+    blog_post.is_deleted = True
+    db.commit()
+
+    return success_response(
+        message="Blog post archived successfully!",
+        status_code=200,
+        data=jsonable_encoder(blog_post),
+    )
+
+
 
 # Post a comment to a blog
 @blog.post("/{blog_id}/comments", response_model=CommentSuccessResponse)
