@@ -73,7 +73,7 @@ def test_mark_notification_as_read(client, db_session_mock):
     response = client.patch(f"/api/v1/notifications/{notification.id}", headers=headers)
 
     assert response.status_code == 200
-    assert response.json()["success"] == True
+    assert response.json()["status"] == "success"
     assert response.json()["status_code"] == 200
     assert response.json()["message"] == "Notification marked as read"
 
