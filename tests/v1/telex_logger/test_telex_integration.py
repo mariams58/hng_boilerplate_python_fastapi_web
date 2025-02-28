@@ -1,5 +1,6 @@
 import pytest
 import datetime
+import json
 from unittest.mock import AsyncMock, patch
 from api.utils.send_logs import send_error_to_telex
 from api.utils.settings import settings
@@ -12,11 +13,12 @@ async def test_send_error_to_telex_success(mock_post):
     """Test successful error logging to Telex"""
 
     # Mock a successful API response
-    mock_post.return_value.status_code = 200
+    mock_post.return_value.status_code = 202
 
     request_method = "GET"
     request_url_path = "/test-endpoint"
-    exc = "Test Exception"
+    exc = Exception("Test Exception")
+    exc.status_code = 500  # Simulating an exception with a status_code attribute
 
     await send_error_to_telex(request_method, request_url_path, exc)
 
@@ -26,15 +28,16 @@ async def test_send_error_to_telex_success(mock_post):
     expected_payload = {
         "status": "error",
         "username": "hng_boilerplate",
-        "message": str(
+        "message": json.dumps(  # Ensure message is a JSON string
             {
                 "timestamp": timestamp,  # Ensure timestamp matches format
                 "event_name": "server_error",
                 "request_method": request_method,
                 "request_path": request_url_path,
-                "status_code": 500,
-                "error_message": f"An unexpected error occurred: {exc}",
-            }
+                "status_code": 500,  # Extracted from the exception
+                "error_message": "An unexpected error occurred: Test Exception",
+            },
+            indent=4
         ),
         "event_name": "🚨 Internal Server Error",
     }
@@ -45,9 +48,14 @@ async def test_send_error_to_telex_success(mock_post):
     assert args[0] == settings.TELEX_WEBHOOK_URL
     assert kwargs["json"]["username"] == expected_payload["username"]
     assert kwargs["json"]["event_name"] == expected_payload["event_name"]
-    assert kwargs["json"]["message"].startswith(
-        "{'timestamp': '"
-    )  # Partial match to allow slight time variations
+
+    # Convert message back to a dictionary to compare fields correctly
+    actual_message = json.loads(kwargs["json"]["message"])
+    expected_message = json.loads(expected_payload["message"])
+
+    assert actual_message["status_code"] == expected_message["status_code"]
+    assert actual_message["error_message"] == expected_message["error_message"]
+    assert actual_message["timestamp"] == expected_message["timestamp"].replace("T", " ")  # Allow slight time drift
 
 
 @pytest.mark.asyncio
@@ -61,7 +69,7 @@ async def test_send_error_to_telex_failure(mock_logger, mock_post):
 
     request_method = "POST"
     request_url_path = "/fail-endpoint"
-    exc = "Another Test Exception"
+    exc = Exception("Another Test Exception")
 
     await send_error_to_telex(request_method, request_url_path, exc)
 
@@ -70,3 +78,23 @@ async def test_send_error_to_telex_failure(mock_logger, mock_post):
 
     # Ensure the API was still attempted
     mock_post.assert_awaited_once()
+
+@pytest.mark.asyncio
+@patch("httpx.AsyncClient.post", new_callable=AsyncMock)
+@patch("api.utils.logger.logger.error")  # Mock logger.warning
+async def test_send_error_to_telex_missing_webhook(mock_logger, mock_post):
+    """Test that function does nothing if TELEX_WEBHOOK_URL is missing"""
+
+    # Temporarily remove the webhook URL
+    with patch("api.utils.send_logs.TELEX_WEBHOOK_URL", None):
+        request_method = "GET"
+        request_url_path = "/test-endpoint"
+        exc = Exception("Test Exception")
+
+        await send_error_to_telex(request_method, request_url_path, exc)
+
+        # Ensure no API call was made
+        mock_post.assert_not_awaited()
+
+        # Ensure the logger warning was called
+        mock_logger.assert_called_once_with("TELEX_WEBHOOK_URL is not set")
