@@ -21,6 +21,7 @@ from api.v1.schemas.user import (UserCreate,
                                  MagicLinkRequest,
                                  ChangePasswordSchema,
                                  AuthMeResponse)
+from api.v1.services.login_notification import send_login_notification
 from api.v1.services.organisation import organisation_service
 from api.v1.schemas.organisation import CreateUpdateOrganisation
 from api.db.database import get_db
@@ -139,7 +140,7 @@ def register_as_super_admin(request: Request, user: UserCreate, db: Session = De
 
 @auth.post("/login", status_code=status.HTTP_200_OK, response_model=auth_response)
 @limiter.limit("1000/minute")  # Limit to 1000 requests per minute per IP
-def login(request: Request, login_request: LoginRequest, db: Session = Depends(get_db)):
+def login(request: Request, login_request: LoginRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Endpoint to log in a user"""
 
     # Authenticate the user
@@ -151,6 +152,9 @@ def login(request: Request, login_request: LoginRequest, db: Session = Depends(g
     # Generate access and refresh tokens
     access_token = user_service.create_access_token(user_id=user.id)
     refresh_token = user_service.create_refresh_token(user_id=user.id)
+
+    # Background task for email notification
+    background_tasks.add_task(send_login_notification, user, request)
 
     response = auth_response(
         status_code=200,
