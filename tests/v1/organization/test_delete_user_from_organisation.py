@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
-from fastapi import status, HTTPException
+from fastapi import status
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -15,18 +15,7 @@ from api.v1.services.organisation import organisation_service
 from main import app
 
 
-def mock_get_current_user():
-    return User(
-        id=str(uuid7()),
-        email="testuser@gmail.com",
-        password=user_service.hash_password("Testpassword@123"),
-        first_name="Test",
-        last_name="User",
-        is_active=True,
-        is_superadmin=False,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
+
 def mock_get_current_admin():
     return User(
         id=str(uuid7()),
@@ -47,12 +36,6 @@ def mock_org():
         id=str(uuid7()),
         name="Test Company",
     )
-
-
-def mock_org_users():
-    """Mock organisation users"""
-    return [mock_get_current_user()]
-
 
 @pytest.fixture
 def db_session_mock():
