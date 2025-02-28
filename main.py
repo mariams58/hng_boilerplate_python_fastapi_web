@@ -118,7 +118,7 @@ async def validation_exception(request: Request, exc: RequestValidationError):
 
 
 @app.exception_handler(IntegrityError)
-async def exception(request: Request, exc: IntegrityError):
+async def integrity_exception(request: Request, exc: IntegrityError):
     """Integrity error exception handlers"""
 
     logger.exception(f"Exception occured; {exc}")
@@ -134,7 +134,7 @@ async def exception(request: Request, exc: IntegrityError):
 
 
 @app.exception_handler(Exception)
-async def exception(request: Request, exc: Exception):
+async def global_exception(request: Request, exc: Exception):
     """Other exception handlers"""
 
     logger.exception(f"Exception occured; {exc}")
