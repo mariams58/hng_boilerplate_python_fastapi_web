@@ -57,6 +57,7 @@ def get_all_blogs(db: Session = Depends(get_db), limit: int = 10, skip: int = 0)
         model=Blog,
         limit=limit,
         skip=skip,
+        filters={"is_deleted": False} #filter out soft-deleted blogs
     )
 
 
