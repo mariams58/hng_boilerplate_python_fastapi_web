@@ -99,7 +99,7 @@ def test_successful_like(
     resp_d = resp.json()
     print(resp_d)
     assert resp.status_code == 200
-    assert resp_d['success'] == True
+    assert resp_d['status'] == "success"
     assert resp_d['message'] == "Like recorded successfully."
 
     like_data = resp_d['data']['object']
