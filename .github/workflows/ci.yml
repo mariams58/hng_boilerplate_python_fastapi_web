@@ -2,6 +2,7 @@ name: CI
 
 on:
   pull_request:
+    branches: [dev]
     types: [opened, synchronize, reopened]
     paths-ignore:
       - "README.md"
