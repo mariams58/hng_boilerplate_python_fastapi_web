@@ -30,6 +30,7 @@ class TOTPService(Service):
             db.add(totp_device)
             db.commit()
             db.refresh(totp_device)
+            
             return totp_device
         except SQLAlchemyError as e:
             db.rollback()
@@ -101,6 +102,72 @@ class TOTPService(Service):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error generating QR code: {str(e)}",
             )
+            
+    def verify_token(
+        self, db: Session, user_id: str, schema: str, valid_window: int = 1, extra_action: str | None = None
+    ) -> TOTPDevice | None:
+        """
+        Verify TOTP code with an optional valid time window for drift.
+        Optionally handle enabling/disabling of TOTP devices.
+        """
+        totp_device = self.fetch(db=db, user_id=user_id)
+        if not totp_device:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA is not set up for this user",
+            )
+        try:
+            totp = pyotp.TOTP(totp_device.secret)
+            if not totp.verify(schema, valid_window=valid_window):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid TOTP code"
+                )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error verifying totp code: {str(e)}",
+            )
+        
+        # Handle enable/disable actions
+        try:
+            if extra_action is not None:
+                if extra_action == "enable":
+                    totp_device.confirmed = True
+                elif extra_action == "disable":
+                    totp_device.confirmed = False
+                db.add(totp_device)
+                db.commit()
+                db.refresh(totp_device)
+                return totp_device
+        except SQLAlchemyError as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database error: {str(e)}",
+            )
+            
+        return True
+    
+    
+    def check_2fa_status_and_verify(
+        self, db: Session, user_id: str, schema: str | None = None
+    ):
+        """Check if user has 2FA enabled and verify code if True"""
+        
+        totp_device = self.fetch(db, user_id)
+        if totp_device and hasattr(totp_device, "confirmed"):
+            if totp_device.confirmed and not schema:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="2FA is enabled for this user. Provide a valid TOTP code.",
+                )
+            elif not totp_device.confirmed and schema:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="2FA is not enabled for this user. Proceed to enable 2FA device.",
+                )
+            elif totp_device.confirmed and schema:
+                return self.verify_token(db, user_id, schema)
 
 
 totp_service = TOTPService()

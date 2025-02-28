@@ -56,6 +56,7 @@ origins = [
     "http://localhost:3000",
     "http://localhost:3001",
     'https://anchor-python.teams.hng.tech',
+    'https://restfox.dev',
 ]
 
 

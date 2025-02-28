@@ -32,7 +32,7 @@ from api.db.database import get_db
 from api.v1.services.user import user_service
 from api.v1.services.auth import AuthService
 from api.v1.services.profile import profile_service
-from api.v1.schemas.totp_device import TOTPDeviceRequestSchema, TOTPDeviceResponseSchema
+from api.v1.schemas.totp_device import TOTPDeviceRequestSchema, TOTPDeviceResponseSchema, TOTPTokenSchema, TOTPDeviceDataSchema
 from api.v1.services.totp import totp_service
 from api.utils.settings import settings
 
@@ -165,6 +165,7 @@ def login(request: Request, login_request: LoginRequest, db: Session = Depends(g
     user = user_service.authenticate_user(
         db=db, email=login_request.email, password=login_request.password
     )
+    totp_service.check_2fa_status_and_verify(db, user.id, login_request.totp_code)
     user_organizations = organisation_service.retrieve_user_organizations(user, db)
 
     # Generate access and refresh tokens
@@ -464,4 +465,70 @@ def setup_2fa(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error setting up 2FA: {str(e)}",
+        )
+
+
+@auth.put("/enable-2fa")
+@limiter.limit("20/minute")
+def enable_2fa(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    token_schema: TOTPTokenSchema,
+    current_user: Annotated[User, Depends(user_service.get_current_user)],
+):
+    """Endpoint to enable a TOTP device"""
+
+    try:
+        totp_device = totp_service.verify_token(
+            db=db, 
+            user_id=current_user.id, 
+            schema=token_schema.totp_token, 
+            extra_action="enable"
+        )
+        response_data = TOTPDeviceDataSchema(user_id=totp_device.user_id, confirmed=totp_device.confirmed)
+        
+        return success_response(
+            status_code=status.HTTP_202_ACCEPTED,
+            message="TOTP device enabled successfully.",
+            data=response_data.model_dump(),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error enabling totp device: {str(e)}",
+        )
+        
+
+@auth.put("/disable-2fa")
+@limiter.limit("20/minute")
+def disable_2fa(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    token_schema: TOTPTokenSchema,
+    current_user: Annotated[User, Depends(user_service.get_current_user)],
+):
+    """Endpoint to disable a TOTP device"""
+
+    try:
+        totp_device = totp_service.verify_token(
+            db=db, 
+            user_id=current_user.id, 
+            schema=token_schema.totp_token, 
+            extra_action="disable"
+        )
+        response_data = TOTPDeviceDataSchema(user_id=totp_device.user_id, confirmed=totp_device.confirmed)
+        
+        return success_response(
+            status_code=status.HTTP_202_ACCEPTED,
+            message="TOTP device disabled successfully.",
+            data=response_data.model_dump(),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error disabling totp device: {str(e)}",
         )
