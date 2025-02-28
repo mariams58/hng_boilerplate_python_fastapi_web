@@ -37,7 +37,8 @@ def test_status_code(db_session_mock, mock_send_email):
         "password": "strin8Hsg263@",
         "first_name": "string",
         "last_name": "string",
-        "email": "user@gmail.com"
+        "email": "user@gmail.com",
+        "confirm_password": "strin8Hsg263@" # added confirm_password field
     }
 
     response = client.post("/api/v1/auth/register", json=user)
@@ -55,7 +56,8 @@ def test_user_fields(db_session_mock, mock_send_email):
         "password": "strin8Hsg263@",
         "first_name": "sunday",
         "last_name": "mba",
-        "email": "mba@gmail.com"
+        "email": "mba@gmail.com",
+        "confirm_password": "strin8Hsg263@" # added confirm_password field
     }
 
     response = client.post("/api/v1/auth/register", json=user)
@@ -76,7 +78,8 @@ def test_rate_limiting(db_session_mock):
         "password": "ValidP@ssw0rd!",
         "first_name": "Rate",
         "last_name": "Limit",
-        "email": unique_email
+        "email": unique_email,
+        "confirm_password": "ValidP@ssw0rd!" # added confirm_password field
     }
 
 
@@ -88,3 +91,19 @@ def test_rate_limiting(db_session_mock):
     for _ in range(5):
         response = client.post("/api/v1/auth/register", json=user)
         assert response.status_code == 201, f"Expected 201, got {response.status_code}: {response.json()}"
+
+# Test confirm_password feature
+def test_confirm_password_mismatch(db_session_mock):
+    # Create a user payload with mismatching password and confirm_password
+    user = {
+        "password": "ValidP@ssw0rd!",
+        "first_name": "Mismatch",
+        "last_name": "User",
+        "email": "mismatch@gmail.com",
+        "confirm_password": "DifferentP@ssw0rd!"
+    }
+    response = client.post("/api/v1/auth/register", json=user)
+    # FastAPI/Pydantic validation errors typically return a 422 status code
+    assert response.status_code == 422, f"Expected status code 422, got {response.status_code}"
+    # Optionally, verify that the error message indicates the password mismatch
+    assert "Passwords do not match" in response.text
