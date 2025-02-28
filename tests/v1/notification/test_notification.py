@@ -51,7 +51,6 @@ user = User(
     updated_at=updated_at,
 )
 
-# Create test notification
 
 notification = Notification(
     id=notification_id,
