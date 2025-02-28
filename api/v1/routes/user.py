@@ -27,7 +27,7 @@ async def delete_account(request: Request, db: Session = Depends(get_db), curren
 
     if user_id:
         if not current_user.is_superadmin:  # Check if the logged-in user is an admin
-            raise HTTPException(status_code=403, detail="Only admins can delete users by ID.")
+            raise HTTPException(status_code=401, detail="Only admins can delete users by ID.")
         access_token = None # basically ignore the access token if user_id is provided (but it still has to be provided by an auth admin)
 
     # Delete current user
@@ -35,7 +35,7 @@ async def delete_account(request: Request, db: Session = Depends(get_db), curren
 
     return success_response(
         status_code=200,
-        message='User deleted successfully',
+        message='User successfully deleted',
     )
 
 @user_router.patch("",status_code=status.HTTP_200_OK)
