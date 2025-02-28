@@ -161,7 +161,7 @@ async def delete_organisation(
             status_code=status.HTTP_200_OK,
             message="Organisation with ID {org_id} deleted successfully",
         )
-    
+
 @organisation.delete("/{org_id}/users/{user_id}")
 async def remove_user_from_organisation(
     org_id: str,
@@ -204,7 +204,8 @@ async def remove_user_from_organisation(
     ))
     db.commit()
 
-    return success_response(
-        status_code=status.HTTP_200_OK,
-        message="User successfully removed from organisation",
-    )
+    return {
+        "message": "User successfully removed from organisation",
+        "success": True,
+        "status_code": 200
+    }
