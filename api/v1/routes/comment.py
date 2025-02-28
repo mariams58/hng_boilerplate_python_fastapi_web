@@ -86,7 +86,7 @@ async def dislike_comment(
 
     return success_response(
         message=dislike.get("message"),
-        status_code=dislike.get("status_code"),
+        status_code=status.HTTP_201_CREATED,
         data=jsonable_encoder(dislike),
     )
 
