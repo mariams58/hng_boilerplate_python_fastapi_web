@@ -35,5 +35,7 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = config("TWILIO_AUTH_TOKEN")
     TWILIO_PHONE_NUMBER: str = config("TWILIO_PHONE_NUMBER")
 
+    # telex webhook url
+    TELEX_WEBHOOK_URL: str = config("TELEX_WEBHOOK_URL")
 
 settings = Settings()

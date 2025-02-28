@@ -19,6 +19,7 @@ from api.utils.json_response import JsonResponseDict
 from api.utils.logger import logger
 from api.v1.routes import api_version_one
 from api.utils.settings import settings
+from api.utils.send_logs import send_error_to_telex
 from scripts.populate_db import populate_roles_and_permissions
 
 
@@ -117,6 +118,7 @@ async def validation_exception(request: Request, exc: RequestValidationError):
     )
 
 
+
 @app.exception_handler(IntegrityError)
 async def exception(request: Request, exc: IntegrityError):
     """Integrity error exception handlers"""
@@ -139,6 +141,8 @@ async def exception(request: Request, exc: Exception):
 
     logger.exception(f"Exception occured; {exc}")
 
+    await send_error_to_telex(request.method, request.url.path, exc)
+                              
     return JSONResponse(
         status_code=500,
         content={
@@ -147,6 +151,11 @@ async def exception(request: Request, exc: Exception):
             "message": f"An unexpected error occurred: {exc}",
         },
     )
+
+@app.get("/cause-error")
+async def cause_error():
+    raise RuntimeError("Database connection failed!")
+
 
 
 STATIC_DIR = "static/profile_images"
