@@ -165,12 +165,6 @@ async def global_exception(request: Request, exc: Exception):
         },
     )
 
-@app.get("/cause-error")
-async def cause_error():
-    raise RuntimeError("Database connection failed!")
-
-
-
 STATIC_DIR = "static/profile_images"
 os.makedirs(STATIC_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
