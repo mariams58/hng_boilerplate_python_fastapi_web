@@ -329,10 +329,8 @@ async def delete_blog_like(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
     
     blog_like_service = BlogLikeService(db)
-    print(f"Deleting BlogLike: {blog_like_id}")
     
     blog_like = blog_like_service.fetch(blog_like_id)
-    print(f"Fetched BlogLike: {blog_like}")
     
     # Check if blogLike exist
     if not blog_like:
