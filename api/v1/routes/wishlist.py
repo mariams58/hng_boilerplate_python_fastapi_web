@@ -7,7 +7,7 @@ from api.db.database import get_db
 from api.v1.models.user import User
 from api.v1.services.user import user_service
 from api.v1.schemas.wishlist import WishlistCreate
-from api.v1.services.wishlist import wishlist_service
+from api.v1.services.wishlist import wishlist_service, ProductAlreadyInWishlistException,ProductNotFoundException
 
 wishlist= APIRouter(prefix="/wishlist", tags=["Wishlist"])
 
@@ -15,10 +15,8 @@ wishlist= APIRouter(prefix="/wishlist", tags=["Wishlist"])
 def add_to_wishlist(wishlist_data: WishlistCreate, db: Session = Depends(get_db), current_user: User = Depends(user_service.get_current_user)):
 	try:
 		wishlist_service.create(db, current_user.id, wishlist_data)
-	except Exception as e:
-		if str(e) == "Product already in wishlist":
-			raise HTTPException(status_code=400, detail="Product already in wishlist")
-		elif str(e) == "Product not found":
-			raise HTTPException(status_code=404, detail="Product not found")
-
-	return success_response(status_code=201, message="Product added to waitlist successfully")
+		return success_response(status_code=201, message="Product added to waitlist successfully")
+	except ProductAlreadyInWishlistException:
+		raise HTTPException(status_code=400, detail="Product already in wishlist")
+	except ProductNotFoundException:
+		raise HTTPException(status_code=404, detail="Product not found")

@@ -6,21 +6,23 @@ from api.v1.models.product import Product
 from api.v1.models.wishlist import Wishlist
 from api.v1.schemas.wishlist import WishlistCreate
 
+class ProductAlreadyInWishlistException(Exception):
+	pass
+
+class ProductNotFoundException(Exception):
+	pass
+
+
 class WishlistService(Service):
 	def create(self, db: Session, user_id: str, schema: WishlistCreate):
 		existing_entry = db.query(Wishlist).filter(Wishlist.user_id == user_id, Wishlist.product_id == schema.product_id).first()
 
 		if existing_entry:
-			raise HTTPException(
-			status_code=status.HTTP_400_BAD_REQUEST,
-			detail="Product already in wishlist",
-		)
+			raise ProductAlreadyInWishlistException("Product already in wishlist",)
+	
 		product = db.query(Product).filter(Product.id == schema.product_id).first()
 		if not product:
-			raise HTTPException(
-				status_code= status.HTTP_404_NOT_FOUND,
-				detail="Product not found",
-			)
+			raise ProductNotFoundException("Product not found")
 		
 		wishlist_entry = Wishlist(user_id=user_id, **schema.model_dump())
 		db.add(wishlist_entry)
