@@ -95,35 +95,6 @@ def retrieve_subscribers(
     )
 
 
-
-# @newsletter.get(
-#     "/subscribers",
-#     response_model=success_response,
-#     status_code=200,
-# )
-# def retrieve_subscribers(
-#     db: Session = Depends(get_db),
-#     admin: User = Depends(user_service.get_current_super_admin),
-# ):
-#     """
-#     Retrieve all newsletter subscription from database
-#     """
-
-#     subscriptions = NewsletterService.fetch_all(db)
-#     subs_filtered = list(
-#         map(lambda x: EmailRetrieveSchema.model_validate(x), subscriptions)
-#     )
-
-#     if len(subs_filtered) == 0:
-#         subs_filtered = [{}]
-
-#     return success_response(
-#         message="Subscriptions retrieved successfully",
-#         status_code=200,
-#         data=jsonable_encoder(subs_filtered),
-#     )
-
-
 @newsletter.get(
     "/{id}", response_model=SingleNewsletterResponse, status_code=status.HTTP_200_OK
 )
