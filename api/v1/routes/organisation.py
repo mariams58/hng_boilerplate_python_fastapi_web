@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from api.utils.success_response import success_response
 from api.v1.models.user import User
+from api.v1.models.organisation import Organisation
 from api.v1.schemas.organisation import (
     CreateUpdateOrganisation,
     PaginatedOrgUsers,
@@ -126,3 +127,54 @@ async def delete_organisation(
             status_code=status.HTTP_200_OK,
             message="Organisation with ID {org_id} deleted successfully",
         )
+    
+@organisation.delete("/{org_id}/users/{user_id}")
+async def remove_user_from_organisation(
+    org_id: str,
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(user_service.get_current_user),
+):
+    """
+    Endpoint to remove a user from an organisation
+    """
+    organisation = organisation_service.get_organisation_by_id(db, org_id)
+    if not organisation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Organisation not found"
+        )
+
+    user = user_service.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    if organisation.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only Admins can perform this action",
+        )
+
+    org_user = (
+        db.query(Organisation)
+        .filter(
+            Organisation.organisation_id == org_id,
+            Organisation.user_id == user_id,
+        )
+        .first()
+    )
+
+    if not org_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User is not part of this organisation",
+        )
+
+    db.delete(org_user)
+    db.commit()
+
+    return success_response(
+        status_code=status.HTTP_200_OK,
+        message="User successfully removed from organisation",
+    )
