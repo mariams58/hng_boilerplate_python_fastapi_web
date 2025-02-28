@@ -82,6 +82,32 @@ async def get_job(
         data=jsonable_encoder(job)
     )
 
+@jobs.get("/filter",  response_model=success_response)
+async def filter_search_jobs(
+        salary_min: str,
+        salary_max: str,
+        location: str,
+        job_type: str,
+        db: Session = Depends(get_db)
+):
+    """
+        Retrieve job details by specified search parameters salary range, location and job_type.
+        This endpoint to handle job filtering based on user preferences. This endpoint will allow users to filter
+        job listings by parameters such as salary range, location, and job type to find positions that match
+        their specific needs
+
+        Parameters:
+        - salary_min: str
+            The salary minimum value
+        - salary_max: str
+            The salary maximum value
+        - location: str
+            The job location
+        - job_type: str
+            The type of job
+        - db: The database session
+        """
+    pass
 
 @jobs.get("")
 async def fetch_all_jobs(
