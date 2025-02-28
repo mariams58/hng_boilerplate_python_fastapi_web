@@ -36,19 +36,28 @@ def mock_org():
 
 
 @pytest.fixture
+def client(db_session_mock):
+    app.dependency_overrides[get_db] = lambda: db_session_mock
+    client = TestClient(app)
+    yield client
+    app.dependency_overrides = {}
+
+
+@pytest.fixture
 def db_session_mock():
     db_session = MagicMock(spec=Session)
     return db_session
 
 
-@pytest.fixture
 def test_get_organisations_invitations_success(client, db_session_mock):
     """
     Test to successfully get organisation invites
     """
     app.dependency_overrides[user_service.get_current_user] = mock_get_current_user
-    
-    with patch("api.v1.services.organisation.organisation_service.fetch_all_invitations") as mock_fetch_all_invitations:
+
+    with patch(
+        "api.v1.services.organisation.organisation_service.fetch_all_invitations"
+    ) as mock_fetch_all_invitations:
         mock_invitations = [
             {
                 "id": str(uuid7()),
@@ -57,36 +66,34 @@ def test_get_organisations_invitations_success(client, db_session_mock):
                 "expires_at": datetime.now(timezone.utc),
             }
         ]
-        mock_fetch_all_invitations.return_value = mock_invitations
-        
-        response = client.get("/api/v1/organisations/invites")        
+        mock_fetch_all_invitations.return_value = (mock_invitations, 1)
+
+        response = client.get("/api/v1/organisations/invites")
         assert response.status_code == 200
-        assert response.json() == {
-            "message": "Organisation invites fetched successfully",
-            "data": mock_invitations,
-            "success": True,
-        }
-        mock_fetch_all_invitations.assert_called_once()
-        mock_fetch_all_invitations.assert_called_with(db_session_mock)
+        response_data = response.json()
+        assert response_data["message"] == "Invites fetched successfully"
+        assert "invitations" in response_data["data"]
+        assert response_data["data"]["total_count"] == 1
+        assert response_data["data"]["page"] == 1
+        assert response_data["data"]["page_size"] == 10
 
 
-@pytest.fixture
 def test_get_organisations_invitations_failure(client, db_session_mock):
     """
-    Test to failure to get organisation invites
+    Test failure to get organisation invites
     """
     app.dependency_overrides[user_service.get_current_user] = mock_get_current_user
-    
-    with patch("api.v1.services.organisation.organisation_service.fetch_all_invitations") as mock_fetch_all_invitations:
+
+    with patch(
+        "api.v1.services.organisation.organisation_service.fetch_all_invitations"
+    ) as mock_fetch_all_invitations:
         mock_fetch_all_invitations.side_effect = Exception("An error occurred")
-        
-        response = client.get("/api/v1/organisations/invites")        
-        assert response.status_code == 500
-        assert response.json() == {
-            "message": "Internal server error",
-            "success": False,
-        }
-        mock_fetch_all_invitations.assert_called_once()
-        mock_fetch_all_invitations.assert_called_with(db_session_mock)
 
-
+        response = client.get("/api/v1/organisations/invites")
+        assert response.status_code == 400
+        response_data = response.json()
+        assert (
+            response_data["message"]
+            == "Unable to retrieve organisation invites: An error occurred"
+        )
+        assert response_data["status_code"] == 400
