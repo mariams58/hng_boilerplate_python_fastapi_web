@@ -1,6 +1,7 @@
 from fastapi import HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from api.core.base.services import Service
+from api.utils.settings import settings
 from api.v1.models.squeeze import Squeeze
 from api.core.dependencies.email_sender import send_email
 from api.v1.schemas.squeeze import CreateSqueeze, FilterSqueeze
@@ -9,7 +10,9 @@ from api.v1.schemas.squeeze import CreateSqueeze, FilterSqueeze
 class SqueezeService(Service):
     """Squeeze service"""
 
-    def create(self, background_tasks: BackgroundTasks, db: Session, data: CreateSqueeze):
+    def create(
+        self, background_tasks: BackgroundTasks, db: Session, data: CreateSqueeze
+    ):
         """Create squeeze page"""
         new_squeeze = Squeeze(
             title=data.title,
@@ -26,16 +29,13 @@ class SqueezeService(Service):
         db.add(new_squeeze)
         db.commit()
         db.refresh(new_squeeze)
-        cta_link = 'https://anchor-python.teams.hng.tech/about-us'
+        cta_link = f"{settings.ANCHOR_PYTHON_BASE_URL}/about-us"
         background_tasks.add_task(
-            send_email, 
+            send_email,
             recipient=data.email,
-            template_name='squeeze.html',
-            subject='Welcome to HNG Squeeze',
-            context={
-                'name': data.full_name,
-                'cta_link': cta_link
-            }
+            template_name="squeeze.html",
+            subject="Welcome to HNG Squeeze",
+            context={"name": data.full_name, "cta_link": cta_link},
         )
 
         return new_squeeze
@@ -72,7 +72,7 @@ class SqueezeService(Service):
 
         if not squeeze:
             raise HTTPException(status_code=404, detail="Squeeze page not found")
-        
+
         db.delete(squeeze)
         db.commit()
         db.refresh()
