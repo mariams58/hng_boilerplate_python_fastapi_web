@@ -153,7 +153,7 @@ async def global_exception(request: Request, exc: Exception):
     """Other exception handlers"""
 
     logger.exception(f"Exception occured; {exc}")
-
+    
     await send_error_to_telex(request.method, request.url.path, exc)
                               
     return JSONResponse(
@@ -164,6 +164,7 @@ async def global_exception(request: Request, exc: Exception):
             "message": f"An unexpected error occurred: {exc}",
         },
     )
+
 
 STATIC_DIR = "static/profile_images"
 os.makedirs(STATIC_DIR, exist_ok=True)
