@@ -27,23 +27,12 @@ def mock_send_email():
 
 @pytest.fixture(scope="session")
 def db_engine():
-    """
-    Create a PostgreSQL test database engine.
 
-    This uses a dedicated test database. Make sure the database exists
-    and the user has permissions to create/drop tables.
-    """
-    # Use environment variables or a fixed test database URL
-    # You can also use TEST_DATABASE_URL environment variable if available
+   # Create a PostgreSQL test database engine.
     db_url = decouple_config('DB_URL')
 
     engine = create_engine(db_url)
     yield engine
-
-    # Optional: Drop all tables after all tests are done
-    # Uncomment if you want to clean up completely after tests
-    # from api.v1.models.base_model import BaseTableModel
-    # BaseTableModel.metadata.drop_all(engine)
 
 
 @pytest.fixture(scope="session")
@@ -62,12 +51,8 @@ def apply_migrations(db_engine):
 
 @pytest.fixture(scope="function")
 def db_session(db_engine, apply_migrations):
-    """
-    Create a new database session for a test.
 
-    The session is rolled back after each test function.
-    """
-    # Connect to the database
+    #Create a new database session for a test.
     connection = db_engine.connect()
 
     # Begin a transaction
@@ -110,8 +95,6 @@ def db_session(db_engine, apply_migrations):
 
         yield user
 
-        # No need to delete as transaction is rolled back
-
     @pytest.fixture
     def test_blog(db_session, test_user):
         """Create a test blog post."""
@@ -132,8 +115,6 @@ def db_session(db_engine, apply_migrations):
         db_session.refresh(blog)
 
         yield blog
-
-        # No need to delete as transaction is rolled back
 
     @pytest.fixture
     def test_multiple_blogs(db_session, test_user):
@@ -163,8 +144,6 @@ def db_session(db_engine, apply_migrations):
 
         yield blogs
 
-        # No need to delete as transaction is rolled back
-
     @pytest.fixture
     def test_blog_like(db_session, test_user, test_blog):
         """Create a test blog like."""
@@ -182,8 +161,6 @@ def db_session(db_engine, apply_migrations):
 
         yield like
 
-        # No need to delete as transaction is rolled back
-
     @pytest.fixture
     def test_blog_dislike(db_session, test_user, test_blog):
         """Create a test blog dislike."""
@@ -200,8 +177,6 @@ def db_session(db_engine, apply_migrations):
         db_session.refresh(dislike)
 
         yield dislike
-
-        # No need to delete as transaction is rolled back
 
     @pytest.fixture
     def test_multiple_users(db_session):
