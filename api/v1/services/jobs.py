@@ -36,7 +36,6 @@ class JobService():
     def retrieve(self, db: Session, job_id):
         """Fetches a job by ID"""
         job = db.query(Job).filter(Job.id == job_id).first()
-        print(job)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         return job

@@ -59,9 +59,57 @@ async def add_jobs(
         data=jsonable_encoder(JobCreateResponseSchema.model_validate(new_job))
     )
 
+@jobs.get("/filter", response_model=success_response)
+async def filter(
+        title: Optional[str] = None,
+        location: Optional[str] = None,
+        job_type: Optional[str] = None,
+        db: Session = Depends(get_db)
+):
+    """
+        Retrieve job details by specified search parameters salary range, location and job_type.
+        This endpoint to handle job filtering based on user preferences. This endpoint will allow users to filter
+        job listings by parameters such as salary range, location, and job type to find positions that match
+        their specific needs
 
+        Parameters:
+        - title: str (optional)
+            The job title
+        - location: str (optional)
+            The job location
+        - job_type: str (optional)
+            The type of job
+        - db: The database session
+        """
+    jobs = job_service.fetch_by_filters(db, title, location, job_type)
 
+    return success_response(
+        status_code=status.HTTP_200_OK,
+        data=jsonable_encoder(jobs),
+        message= f"Successfully retrieved {len(jobs)} jobs"
+    )
 
+@jobs.get("/{job_id}", response_model=success_response)
+async def retrieveJob(
+    job_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieve job details by ID.
+    This endpoint fetches the details of a specific job by its ID.
+
+    Parameters:
+    - job_id: str
+        The ID of the job to retrieve.
+    - db: The database session
+    """
+    job = job_service.retrieve(db, job_id)
+
+    return success_response(
+        message="Retrieved Job successfully",
+        status_code=status.HTTP_200_OK,
+        data=jsonable_encoder(job)
+    )
 
 @jobs.get("")
 async def fetch_all_jobs(
@@ -78,7 +126,6 @@ async def fetch_all_jobs(
                 Response: a response object containing details if successful or appropriate errors if not
     """
     jobs = job_service.fetch_all(db)
-    print('helloeee')
     return success_response(
        status_code=status.HTTP_200_OK,
        data=jsonable_encoder(jobs),
@@ -125,35 +172,6 @@ async def update_job(
         status_code=status.HTTP_200_OK,
     )
 
-@jobs.get("/filter")
-async def filter(
-        title: Optional[str] = None,
-        location: Optional[str] = None,
-        job_type: Optional[str] = None,
-        db: Session = Depends(get_db)
-):
-    """
-        Retrieve job details by specified search parameters salary range, location and job_type.
-        This endpoint to handle job filtering based on user preferences. This endpoint will allow users to filter
-        job listings by parameters such as salary range, location, and job type to find positions that match
-        their specific needs
-
-        Parameters:
-        - title: str (optional)
-            The job title
-        - location: str (optional)
-            The job location
-        - job_type: str (optional)
-            The type of job
-        - db: The database session
-        """
-    jobs = job_service.fetch_by_filters(db, title, location, job_type)
-
-    return success_response(
-        status_code=status.HTTP_200_OK,
-        data=jsonable_encoder(jobs),
-        message= f"Successfully retrieved {len(jobs)} jobs"
-    )
 
 
 # -------------------- JOB APPLICATION ROUTES ------------------------
@@ -253,26 +271,6 @@ async def delete_application(job_id: str,
 
 
 
-@jobs.get("/{job_id}", response_model=success_response)
-async def retrieveJob(
-    job_id: str,
-    db: Session = Depends(get_db)
-):
-    """
-    Retrieve job details by ID.
-    This endpoint fetches the details of a specific job by its ID.
 
-    Parameters:
-    - job_id: str
-        The ID of the job to retrieve.
-    - db: The database session
-    """
-    job = job_service.retrieve(db, job_id)
-
-    return success_response(
-        message="Retrieved Job successfully",
-        status_code=200,
-        data=jsonable_encoder(job)
-    )
 
 
