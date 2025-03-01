@@ -45,7 +45,7 @@ async def request_reset_link(
     user = reset_password_service.fetch(reset_email.email, db)
     reset_token = reset_password_service.create(user, db)
 
-    link = f"{settings.BASE_URL}/reset-password?token={reset_token}"
+    link = f"{settings.ANCHOR_PYTHON_BASE_URL}/reset-password?token={reset_token}"
 
     try:
         background_tasks.add_task(

@@ -91,7 +91,7 @@ async def waitlist_signup(
 
     db_user = process_waitlist_signup(user, db)
     if db_user:
-        cta_link = f"{settings.BASE_URL}/about-us"
+        cta_link = f"{settings.ANCHOR_PYTHON_BASE_URL}/about-us"
         # Send email in the background
         background_tasks.add_task(
             send_email,

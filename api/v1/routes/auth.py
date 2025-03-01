@@ -76,7 +76,7 @@ def register(
     # Create access and refresh tokens
     access_token = user_service.create_access_token(user_id=user.id)
     refresh_token = user_service.create_refresh_token(user_id=user.id)
-    cta_link = f"{settings.BASE_URL}/about-us"
+    cta_link = f"{settings.ANCHOR_PYTHON_BASE_URL}/about-us"
 
     # Send email in the background
     background_tasks.add_task(
