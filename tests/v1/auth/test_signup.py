@@ -44,10 +44,8 @@ def test_status_code(db_session_mock, mock_send_email):
     response = client.post("/api/v1/auth/register", json=user)
 
     assert response.status_code == 201
-    # mock_send_email.assert_called_once()
 
 def test_user_fields(db_session_mock, mock_send_email):
-
     db_session_mock.query(Newsletter).filter().first.return_value = None
     db_session_mock.add.return_value = None
     db_session_mock.commit.return_value = None
@@ -66,8 +64,7 @@ def test_user_fields(db_session_mock, mock_send_email):
     assert response.json()['data']["user"]['email'] == "mba@gmail.com"
     assert response.json()['data']["user"]['first_name'] == "sunday"
     assert response.json()['data']["user"]['last_name'] == "mba"
-    # mock_send_email.assert_called_once()
-    
+
 def test_rate_limiting(db_session_mock):
     db_session_mock.query(User).filter().first.return_value = None
     db_session_mock.add.return_value = None
@@ -81,7 +78,6 @@ def test_rate_limiting(db_session_mock):
         "email": unique_email,
         "confirm_password": "ValidP@ssw0rd!" # added confirm_password field
     }
-
 
     response = client.post("/api/v1/auth/register", json=user)
     assert response.status_code == 201, f"Expected 201, got {response.status_code}: {response.json()}"
