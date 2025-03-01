@@ -294,7 +294,7 @@ class ProductCategoryService(Service):
         category: ProductCategory = (
             db.query(ProductCategory).filter_by(name=category_name).first()
         )
-        if not category_name:
+        if not category:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Category not found.",
@@ -308,6 +308,33 @@ class ProductCategoryService(Service):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Deletion failed due to integrity error.",
+            )
+        return category
+
+    @staticmethod
+    def restore_deleted(db: Session, category_name: str):
+        category = (
+            db.query(ProductCategory).filter_by(name=category_name).first()
+        )
+        if not category:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found",
+            )
+        if not bool(category.is_deleted):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Category is not deleted",
+            )
+
+        category.is_deleted = False  # restore the category
+        try:
+            db.commit()
+            db.refresh(category)
+        except sqlalchemy.exc.IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Restoration failed due to integrity error.",
             )
         return category
 
