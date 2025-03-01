@@ -113,11 +113,8 @@ def get_user_testimonials(
                 "message": "You can only view your own testimonials"
             }
 
-        # Log the values to help debug
-        logger.info(f"Fetching testimonials for user_id: {user_id}")
-        logger.info(f"Current user id: {current_user.id}")
-        
-        paginated_data = paginated_response(
+        # Simply return the paginated response
+        return paginated_response(
             db=db,
             model=Testimonial,
             limit=page_size,
@@ -125,34 +122,9 @@ def get_user_testimonials(
             filters={"author_id": user_id}
         )
         
-        # Log the paginated data to see what we're getting
-        logger.info(f"Paginated data: {paginated_data.body}")
-        
-        response_data = json.loads(paginated_data.body)
-        items = response_data["data"]["items"]
-        
-        total = len(items)
-        
-        testimonials = [
-            {
-                "id": item["id"],
-                "user_id": item["author_id"],
-                "message": item["content"],
-                "created_at": item["created_at"]
-            }
-            for item in items
-        ]
-        
-        return {
-            "status_code": 200,
-            "total_testimonials": total,
-            "testimonials": testimonials
-        }
-        
     except Exception as e:
-        # Log the full error with traceback
         logger.exception(f"Error retrieving testimonials: {str(e)}")
         return {
             "status_code": 500,
-            "message": f"An unexpected error occurred: {str(e)}"  # Include error message in response
+            "message": "An unexpected error occurred"
         }
