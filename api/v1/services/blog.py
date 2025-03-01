@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Generic, TypeVar, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -10,6 +10,31 @@ from api.v1.models.comment import Comment
 from api.v1.models.user import User
 from api.v1.schemas.blog import BlogCreate
 
+ModelType = TypeVar("ModelType")
+
+class BaseBlogInteractionService(Generic[ModelType]):
+    """Base service for blog interactions (likes/dislikes)"""
+    
+    def __init__(self, db: Session, model: type[ModelType]):
+        self.db = db
+        self.model = model
+
+    def fetch(self, item_id: str) -> ModelType:
+        """Generic fetch method for interaction models"""
+        return check_model_existence(self.db, self.model, item_id)
+
+    def delete(self, item_id: str, user_id: str) -> None:
+        """Generic delete method with owner verification"""
+        item = self.fetch(item_id)
+        
+        if item.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Insufficient permission"
+            )
+            
+        self.db.delete(item)
+        self.db.commit()
 
 class BlogService:
     """Blog service functionality"""
@@ -240,51 +265,15 @@ class BlogService:
         return comment
 
 
-class BlogLikeService:
+#BlogLikeServi9ce and BlogDislikeService inherits from baseclass BaseBlogInteractionService
+class BlogLikeService(BaseBlogInteractionService[BlogLike]):
     """BlogLike service functionality"""
 
     def __init__(self, db: Session):
-        self.db = db
+        super().__init__(db, BlogLike)
 
-    def fetch(self, blog_like_id: str):
-        """Fetch a blog like by its ID"""
-        return check_model_existence(self.db, BlogLike, blog_like_id)
-
-    def delete(self, blog_like_id: str, user_id: str):
-        """Delete blog like"""
-        blog_like = self.fetch(blog_like_id)
-
-        # check that current user owns the blog like
-        if blog_like.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Insufficient permission"
-            )
-
-        self.db.delete(blog_like)
-        self.db.commit()
-
-        
-class BlogDislikeService:
+class BlogDislikeService(BaseBlogInteractionService[BlogDislike]):
     """BlogDislike service functionality"""
 
     def __init__(self, db: Session):
-        self.db = db
-
-    def fetch(self, blog_dislike_id: str):
-        """Fetch a blog dislike by its ID"""
-        return check_model_existence(self.db, BlogDislike, blog_dislike_id)
-
-    def delete(self, blog_dislike_id: str, user_id: str):
-        """Delete blog dislike"""
-        blog_dislike = self.fetch(blog_dislike_id)
-
-        # check that current user owns the blog like
-        if blog_dislike.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Insufficient permission"
-            )
-
-        self.db.delete(blog_dislike)
-        self.db.commit()
+        super().__init__(db, BlogDislike)
