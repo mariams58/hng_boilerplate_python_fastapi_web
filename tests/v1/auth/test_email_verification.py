@@ -75,7 +75,7 @@ def test_verify_email_valid_token(client: TestClient, db_session):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "success"
-    assert data["message"] == "Email verified successfully. You can now log in."
+    assert data["message"] == "Email verified successfully."
 
 
 # def test_verify_email_expired_token(client: TestClient, db_session):
