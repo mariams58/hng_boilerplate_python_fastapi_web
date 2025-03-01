@@ -272,3 +272,54 @@ async def delete_application(job_id: str,
 
 
 
+# -------------------- JOB BOOKMARK ROUTES ------------------------
+# --------------------------------------------------------------------
+
+@jobs.post("/bookmark/{job_id}", status_code=status.HTTP_200_OK)
+async def create_bookmark(
+    job_id: str,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(user_service.get_current_user)]
+    ):
+    """
+    Saves specified job for authenticated user.
+    Args:
+        job_id: The id of the job
+        db: database Session object
+        current_user: currently logged in user
+    Returns:
+        HTTP 200 on success
+    """
+    try:
+        job = db.query(Job).filter(Job.id == job_id).first()
+        if job:
+            new_bookmark = bookmark_service.create(db, job_id, current_user.id)
+            logger.info(f"Job bookmarked successfully {new_bookmark.id}")
+
+            return {
+                "status": "success",
+                "message": "Job saved successfully",
+                "status_code": 200,
+                "data": {}
+                }
+
+        return {
+            "status": "failure",
+            "message": "Job not listed",
+            "status_code": 400,
+            "data": {}
+        }
+    except HTTPException as e:
+        return {
+            "status": "failure",
+            "message": str(e.detail),
+            "status_code": 400,
+            "data": {}
+        }
+    except Exception as e:
+        return {
+        "status": "failure",
+        "message": str(e),
+        "status_code": 500,
+        "data": {}
+    }
