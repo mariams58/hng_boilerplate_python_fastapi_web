@@ -112,6 +112,21 @@ class ProductCommentService(Service):
       
       
         # ============== delete for product_service =======
+        
+    def delete_product_comments(self, db: Session, product_id: str):
+        try:
+            product = db.query(Product).filter(Product.id == product_id).first()
+            if not product:
+                raise HTTPException(status_code=404, detail="Product not found")
+
+            deleted_count = db.query(ProductComment).filter(ProductComment.product_id == product_id).delete(synchronize_session=False)
+            db.commit()
+
+            return {"message": f"Deleted {deleted_count} comments for product with ID {product_id}"}
+        
+        except Exception as e:
+            db.rollback()  
+            raise HTTPException(status_code=500, detail=str(e))
     
 
 
