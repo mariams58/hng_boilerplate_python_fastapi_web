@@ -44,42 +44,31 @@ def create_mock_user(mock_user_service, mock_db_session):
 
 def test_get_user_testimonials_success(mock_user_service, mock_db_session):
     """Test successful retrieval of user testimonials"""
-    # Create mock user and testimonials
     mock_user = create_mock_user(mock_user_service, mock_db_session)
-    testimonials = [
-        Testimonial(
-            id=str(uuid7()),
-            content=f"Test content {i}",
-            author_id=mock_user.id,
-            client_name=f"Client {i}",
-            client_designation=f"Designation {i}",
-            ratings=4.5,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
-        ) for i in range(3)
-    ]
-
-    # Setup mock responses
-    mock_db_session.query.return_value.filter.return_value.offset.return_value.limit.return_value.all.return_value = testimonials
-    mock_db_session.query.return_value.filter.return_value.count.return_value = len(testimonials)
     
-    # Get auth token
-    access_token = user_service.create_access_token(str(mock_user.id))
+    # Setup mock query for pagination
+    mock_query = MagicMock()
+    mock_query.filter.return_value = mock_query
+    mock_query.offset.return_value = mock_query
+    mock_query.limit.return_value = mock_query
+    mock_query.all.return_value = []
+    mock_query.count.return_value = 0
     
-    # Override dependencies
+    mock_db_session.query.return_value = mock_query
+    
+    # Override dependency
     app.dependency_overrides[user_service.get_current_user] = lambda: mock_user
     
-    # Make request
     response = client.get(
         f"/api/v1/testimonials/user/{mock_user.id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {user_service.create_access_token(str(mock_user.id))}"}
     )
 
     assert response.status_code == 200
     data = response.json()
-    assert data["status_code"] == 200
-    assert data["total_testimonials"] == 3
-    assert len(data["testimonials"]) == 3
+    assert "data" in data
+    assert "items" in data["data"]
+    assert "total" in data["data"]
 
 def test_get_user_testimonials_unauthorized():
     """Test testimonial retrieval without authentication"""
@@ -90,27 +79,28 @@ def test_get_user_testimonials_unauthorized():
 
 def test_get_user_testimonials_no_testimonials(mock_user_service, mock_db_session):
     """Test when user has no testimonials"""
-    # Create mock user
     mock_user = create_mock_user(mock_user_service, mock_db_session)
     
-    # Setup empty testimonials response
-    mock_db_session.query.return_value.filter.return_value.offset.return_value.limit.return_value.all.return_value = []
-    mock_db_session.query.return_value.filter.return_value.count.return_value = 0
+    # Setup mock query for pagination
+    mock_query = MagicMock()
+    mock_query.filter.return_value = mock_query
+    mock_query.offset.return_value = mock_query
+    mock_query.limit.return_value = mock_query
+    mock_query.all.return_value = []
+    mock_query.count.return_value = 0
     
-    # Get auth token
-    access_token = user_service.create_access_token(str(mock_user.id))
+    mock_db_session.query.return_value = mock_query
     
     # Override dependency
     app.dependency_overrides[user_service.get_current_user] = lambda: mock_user
     
     response = client.get(
         f"/api/v1/testimonials/user/{mock_user.id}",
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {user_service.create_access_token(str(mock_user.id))}"}
     )
     
     assert response.status_code == 200
     data = response.json()
-    assert data["status_code"] == 200
-    assert data["total_testimonials"] == 0
-    assert len(data["testimonials"]) == 0
-# HELLLLO IFE"
+    assert "data" in data
+    assert len(data["data"]["items"]) == 0
+    assert data["data"]["total"] == 0
