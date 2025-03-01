@@ -20,6 +20,7 @@ from api.utils.json_response import JsonResponseDict
 from api.utils.logger import logger
 from api.v1.routes import api_version_one
 from api.utils.settings import settings
+from api.utils.send_logs import send_error_to_telex
 from scripts.populate_db import populate_roles_and_permissions
 
 
@@ -57,6 +58,7 @@ origins = [
     "http://localhost:3000",
     "http://localhost:3001",
     settings.ANCHOR_PYTHON_BASE_URL,
+    "https://anchor-python.teams.hng.tech",
 ]
 
 
@@ -153,6 +155,8 @@ async def global_exception(request: Request, exc: Exception):
     """Other exception handlers"""
 
     logger.exception(f"Exception occured; {exc}")
+
+    await send_error_to_telex(request.method, request.url.path, exc)
 
     return JSONResponse(
         status_code=500,

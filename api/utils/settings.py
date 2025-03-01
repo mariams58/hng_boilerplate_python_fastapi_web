@@ -42,5 +42,7 @@ class Settings(BaseSettings):
         "ANCHOR_PYTHON_BASE_URL", default="https://anchor-python.teams.hng.tech"
     )
 
+    # telex webhook url
+    TELEX_WEBHOOK_URL: str = config("TELEX_WEBHOOK_URL")
 
 settings = Settings()
