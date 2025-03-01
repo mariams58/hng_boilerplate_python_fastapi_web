@@ -100,7 +100,6 @@ def register(request: Request, background_tasks: BackgroundTasks, response: Resp
         secure=True,
         samesite="none",
     )
-    print(user.is_verified)
     return response
 
 

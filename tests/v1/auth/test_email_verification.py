@@ -50,7 +50,9 @@ def create_test_user(db_session, email=None, verified=False):
 
 def generate_token(user_id, expired=False):
     """Helper function to generate a JWT token."""
-    exp_time = datetime.now() + (timedelta(minutes=-1) if expired else timedelta(minutes=30))
+    # expiry_time = datetime.now() + timedelta(seconds=exp)
+    # exp_timestamp = int(expiry_time.timestamp())
+    exp_time = int((datetime.now() + (timedelta(minutes=-1) if expired else timedelta(minutes=30))).timestamp())
     return jwt.encode({"sub": user_id, "exp": exp_time}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -78,15 +80,15 @@ def test_verify_email_valid_token(client: TestClient, db_session):
     assert data["message"] == "Email verified successfully."
 
 
-# def test_verify_email_expired_token(client: TestClient, db_session):
-#     """Test email verification with an expired token."""
-#     user = create_test_user(db_session)
-#     token = generate_token(user.id, expired=True)
-#     response = client.get(f"/api/v1/auth/verify-email?token={token}")
-#     assert response.status_code == 400
-#     data = response.json()
-#     assert data["status"] is False
-#     assert data["message"] == "Verification link expired"
+def test_verify_email_expired_token(client: TestClient, db_session):
+    """Test email verification with an expired token."""
+    user = create_test_user(db_session)
+    token = generate_token(user.id, expired=True)
+    response = client.get(f"/api/v1/auth/verify-email?token={token}")
+    assert response.status_code == 400
+    data = response.json()
+    assert data["status"] is False
+    assert data["message"] == "Verification link expired"
 
 
 def test_verify_email_invalid_token(client:TestClient):

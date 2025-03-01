@@ -599,13 +599,14 @@ class UserService(Service):
         return users
     
     def create_verification_token(self, user_id: int):
-        expiration = datetime.now() + timedelta(seconds=5)
-        data = {"sub": user_id, "exp": expiration}
+        expiry_time = datetime.now() + timedelta(hours=24)
+        exp_timestamp = int(expiry_time.timestamp())
+        data = {"sub": user_id, "exp": exp_timestamp}
         return jwt.encode(data, key=settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     
     
     def verify_user_email(self, token: str, db: Session):
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM], options={"verify_exp": True})
+        payload = jwt.decode(token=token, key=settings.SECRET_KEY, algorithms=[settings.ALGORITHM], options={"verify_exp": True})
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(
@@ -625,7 +626,6 @@ class UserService(Service):
             )
         user.is_verified = True
         db.commit()
-        print(user.is_verified)
         response = JSONResponse(
                         status_code=status.HTTP_200_OK,
                         content={
