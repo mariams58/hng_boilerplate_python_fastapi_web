@@ -31,15 +31,15 @@ class Blog(BaseTableModel):
     dislikes = relationship(
         "BlogDislike", back_populates="blog", cascade="all, delete-orphan"
     )
-views = Column(Integer, nullable=False, server_default=text("0"))  # add views column to track views
+    views = Column(Integer, nullable=False, server_default=text("0"))  # add views column to track views
 
-# Indexes
- __table_args__ = (
-    Index('ix_blogs_author_id', author_id),
-    Index('ix_blogs_title', title),
-    Index('ix_blogs_tags', tags),
-    Index('ix_blogs_is_deleted', is_deleted),
-)
+    # Indexes
+    __table_args__ = (
+        Index('ix_blogs_author_id', author_id),
+        Index('ix_blogs_title', title),
+        Index('ix_blogs_tags', tags),
+        Index('ix_blogs_is_deleted', is_deleted),
+    )
 
 class BlogDislike(BaseTableModel):
     __tablename__ = "blog_dislikes"
