@@ -1,10 +1,12 @@
-from fastapi import HTTPException, BackgroundTasks
+from fastapi import BackgroundTasks, HTTPException
 from sqlalchemy.orm import Session
+
 from api.core.base.services import Service
 from api.utils.settings import settings
 from api.v1.models.squeeze import Squeeze
 from api.core.dependencies.email_sender import send_email
-from api.v1.schemas.squeeze import CreateSqueeze, FilterSqueeze
+from api.v1.models.squeeze import Squeeze
+from api.v1.schemas.squeeze import CreateSqueeze, FilterSqueeze, UpdateSqueeze
 
 
 class SqueezeService(Service):
@@ -62,9 +64,28 @@ class SqueezeService(Service):
             squeeze = db.query(Squeeze).filter(Squeeze.id == id).first()
         return squeeze
 
-    def update(self, db: Session, id: str, schema):
+    def update(self, db: Session, id: str, data: UpdateSqueeze):
         """Update a specific squeeze page"""
-        pass
+        squeeze = db.query(Squeeze).filter(Squeeze.id == id).first()
+
+        if not squeeze:
+            raise HTTPException(status_code=404, detail="Squeeze page not found")
+
+        # Update only the fields that are provided in the update data
+        for field, value in data.dict(exclude_unset=True).items():
+            setattr(squeeze, field, value)
+
+        try:
+            db.commit()
+            db.refresh(squeeze)
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Unexpected error occurred while updating the squeeze page: {e}",
+            )
+
+        return squeeze
 
     def delete(self, db: Session, id: str):
         """Delete a specific squeeze page"""
