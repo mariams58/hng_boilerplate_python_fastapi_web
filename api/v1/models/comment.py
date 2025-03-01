@@ -1,8 +1,8 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from api.v1.models.base_model import BaseTableModel
-
+UTC = timezone.utc
 
 class Comment(BaseTableModel):
     __tablename__ = "comments"
