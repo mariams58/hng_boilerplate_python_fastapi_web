@@ -78,7 +78,7 @@ def get_blog_by_id(id: str, db: Session = Depends(get_db)):
     blog_service = BlogService(db)
 
     # Fetch blog and increment view count
-    blog_post = blog_service.increment_view_count(id)
+    blog_post = blog_service.fetch_and_increment_view(id)
 
     return success_response(
         message="Blog post retrieved successfully!",

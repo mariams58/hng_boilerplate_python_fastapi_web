@@ -239,25 +239,45 @@ class BlogService:
 
         return comment
 
-    # Increment view count
-    def increment_view_count(self, blog_id: str):
-        """Increment the view count for a blog post"""
+    def fetch_and_increment_view(self, blog_id: str):
+        """Fetch a blog post and increment its view count"""
         try:
             blog = self.fetch(blog_id)
             
+            # Add check for non-existent blog
+            if not blog:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Blog with id {blog_id} not found"
+                )
+            
             # Support both dictionary blogs (for tests) and object blogs (for production)
             if isinstance(blog, dict):
+                if "views" not in blog:
+                    blog["views"] = 0
                 blog["views"] += 1
+                return blog
             else:
-                blog.views += 1
+                # For ORM objects
+                blog.views = blog.views + 1 if blog.views else 1
                 
-            self.db.commit()
-            self.db.refresh(blog)
-            return blog
-        except Exception as e:
-            self.db.rollback()
+                # Reordered to refresh BEFORE commit to avoid stale data 
+                self.db.refresh(blog)
+                self.db.commit()
+                return blog
+        except HTTPException as e:
+            # Pass through HTTP exceptions 
             raise e
-
+        except Exception as e:
+            # Rollback on errors and provide custom message
+            self.db.rollback()
+            from api.utils.logger import logger
+            logger.error(f"Error incrementing view count for blog {blog_id}: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to increment view count: {str(e)}"
+            )
+        
 class BlogLikeService:
     """BlogLike service functionality"""
 
