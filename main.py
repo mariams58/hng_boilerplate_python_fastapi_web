@@ -20,12 +20,13 @@ from api.utils.json_response import JsonResponseDict
 from api.utils.logger import logger
 from api.v1.routes import api_version_one
 from api.utils.settings import settings
+from api.utils.send_logs import send_error_to_telex
 from scripts.populate_db import populate_roles_and_permissions
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    '''Lifespan function'''
+    """Lifespan function"""
 
     yield
 
@@ -49,20 +50,20 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get absolute path
 TEMPLATE_DIR = os.path.join(BASE_DIR, "api/core/dependencies/email/templates")
 
 # Set up email templates and css static files
-email_templates = Jinja2Templates(directory='api/core/dependencies/email/templates')
+email_templates = Jinja2Templates(directory="api/core/dependencies/email/templates")
 
 # MEDIA_DIR = os.path.expanduser('~/.media')
-MEDIA_DIR = './media'
+MEDIA_DIR = "./media"
 if not os.path.exists(MEDIA_DIR):
     os.makedirs(MEDIA_DIR)
 
 # Load up media static files
-app.mount('/media', StaticFiles(directory=MEDIA_DIR), name='media')
+app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 origins = [
     "http://localhost:3000",
     "http://localhost:3001",
-    'https://anchor-python.teams.hng.tech',
+    "https://anchor-python.teams.hng.tech",
 ]
 
 
@@ -76,6 +77,7 @@ app.add_middleware(
 )
 
 app.include_router(api_version_one)
+
 
 @app.get("/", tags=["Home"])
 async def get_root(request: Request) -> dict:
@@ -102,7 +104,8 @@ async def http_exception(request: Request, exc: HTTPException):
             "message": exc.detail,
         },
     )
-    
+
+
 @app.exception_handler(RateLimitExceeded)
 async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
     """Rate limit exceeded exception handler"""
@@ -157,6 +160,8 @@ async def global_exception(request: Request, exc: Exception):
     """Other exception handlers"""
 
     logger.exception(f"Exception occured; {exc}")
+
+    await send_error_to_telex(request.method, request.url.path, exc)
 
     return JSONResponse(
         status_code=500,
