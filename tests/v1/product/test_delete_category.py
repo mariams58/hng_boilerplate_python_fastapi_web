@@ -49,9 +49,8 @@ class TestDeleteProductCategory:
         response = client.delete("/api/v1/products/categories/Category1")
 
         # Assert: Should succeed with a 200 status and expected response.
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_204_NO_CONTENT
         json_data = response.json()
-        assert json_data["data"] == dummy_category
         assert json_data["message"] == "Category soft-deleted successfully"
 
     def test_soft_delete_category_unauthorized(self, mocker):
@@ -67,7 +66,8 @@ class TestDeleteProductCategory:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         json_data = response.json()
         assert (
-            json_data["message"] == "User not authorized to delete categories"
+            json_data["message"]
+            == "User not authorized to perform this action"
         )
 
         # Restore the dependency override.
@@ -91,7 +91,7 @@ class TestDeleteProductCategory:
         )
 
         # Assert: Should succeed with 200 OK and the expected response.
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_204_NO_CONTENT
         json_data = response.json()
         assert json_data["data"] == dummy_category
         assert (

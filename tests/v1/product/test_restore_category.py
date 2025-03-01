@@ -41,7 +41,9 @@ class TestRestoreProductCategory:
         # Arrange: Patch the restore method to return a dummy restored category
         dummy_category = {"name": "Category1", "is_deleted": False, "id": "1"}
         mocker.patch.object(
-            ProductCategoryService, "restore", return_value=dummy_category
+            ProductCategoryService,
+            "restore_deleted",
+            return_value=dummy_category,
         )
 
         # Act: Call the restore endpoint

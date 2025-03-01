@@ -138,7 +138,7 @@ def soft_delete_product_category(
     """
     if not (bool(current_user.is_admin) or bool(current_user.is_superadmin)):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="User not authorized to perform this action",
         )
     ProductCategoryService.soft_delete(db, category_name)
@@ -164,7 +164,7 @@ def restore_deleted_category(
     """
     if not (bool(current_user.is_admin) or bool(current_user.is_superadmin)):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="User not authorized to perform this action",
         )
     restored_category = ProductCategoryService.restore_deleted(
@@ -194,7 +194,7 @@ def permanent_delete_product_category(
     """
     if not (bool(current_user.is_admin) or bool(current_user.is_superadmin)):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="User not authorized to perform this action",
         )
     ProductCategoryService.permanent_delete(db, category_name)
