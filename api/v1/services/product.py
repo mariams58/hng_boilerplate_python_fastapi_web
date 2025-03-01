@@ -339,6 +339,27 @@ class ProductCategoryService(Service):
         return category
 
     @staticmethod
+    def permanent_delete(db: Session, category_name: str):
+        category = (
+            db.query(ProductCategory).filter_by(name=category_name).first()
+        )
+        if not category:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found",
+            )
+
+        try:
+            db.delete(category)
+            db.commit()
+        except sqlalchemy.exc.IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Permanent deletion failed due to integrity error.",
+            )
+        return category
+
+    @staticmethod
     def fetch_all(db: Session, **query_params: Optional[Any]):
         """Fetch all newsletter subscriptions with option to search using query parameters"""
 
