@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 import uuid
 import pytest
 from fastapi.testclient import TestClient
+
 from api.db.database import get_db
 from main import app
 
@@ -29,6 +30,7 @@ def test_rate_limiting(db_session_mock, mock_send_email):
     db_session_mock.commit.return_value = None
 
     unique_email = f"rate.limit.{uuid.uuid4()}@gmail.com"
+    
     user_template = {
         "password": "strin8Hsg263@",
         "first_name": "string",
