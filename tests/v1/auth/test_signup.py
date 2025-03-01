@@ -87,4 +87,3 @@ def test_rate_limiting(db_session_mock):
     for _ in range(5):
         response = client.post("/api/v1/auth/register", json=user)
         assert response.status_code == 201, f"Expected 201, got {response.status_code}: {response.json()}"
-        
