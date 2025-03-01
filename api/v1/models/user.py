@@ -93,6 +93,10 @@ class User(BaseTableModel):
     reset_password_token = relationship("ResetPasswordToken",
                                         back_populates="user",
                                         cascade="all, delete-orphan")
+
+    wishlist = relationship("Wishlist", 
+                        back_populates="user", 
+                        cascade="all, delete-orphan")
     
     totp_device = relationship("TOTPDevice", back_populates="user", cascade="all, delete-orphan")
 
