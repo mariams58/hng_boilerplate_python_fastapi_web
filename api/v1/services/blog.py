@@ -2,6 +2,7 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 
 from api.core.base.services import Service
 from api.utils.db_validators import check_model_existence
@@ -40,6 +41,72 @@ class BlogService:
             raise HTTPException(status_code=404, detail="Post not found")
         return blog_post
 
+
+    def search_blogs(self, filters=None, page=1, per_page=10):
+        """
+        Search blogs based on the provided filters with pagination.
+        
+        Args:
+            filters (list): List of SQLAlchemy filter conditions
+            page (int): Page number (1-indexed)
+            per_page (int): Number of items per page
+            
+        Returns:
+            dict: Dictionary containing total count and paginated items
+        """
+        query = self.db.query(Blog).filter(Blog.is_deleted == False)
+        
+        # Apply filters if any
+        if filters:
+            query = query.filter(and_(*filters))
+        
+        # Get total count
+        total = query.count()
+        
+        # Apply pagination
+        offset = (page - 1) * per_page
+        query = query.order_by(Blog.created_at.desc()).offset(offset).limit(per_page)
+        
+        # Execute query
+        items = query.all()
+        
+        # Map items to the expected format
+        result_items = []
+        for item in items:
+            # Get author name if needed
+            author_name = None
+            if item.author_id:
+                author = self.db.query(User).filter(User.id == item.author_id).first()
+                if author:
+                    # Check what attributes the User model actually has
+                    # Use first_name and last_name if available, otherwise fall back to username or id
+                    if hasattr(author, 'first_name') and hasattr(author, 'last_name'):
+                        author_name = f"{author.first_name} {author.last_name}"
+                    elif hasattr(author, 'username'):
+                        author_name = author.username
+                    elif hasattr(author, 'email'):
+                        author_name = author.email
+                    else:
+                        author_name = str(author.id)  # Fallback to ID if nothing else is available
+            
+            # Create result item
+            result_item = {
+                "id": item.id,
+                "title": item.title,
+                "author": author_name,
+                "category": item.tags[0] if item.tags and len(item.tags) > 0 else None,
+                "published_at": item.created_at,
+                "tags": item.tags,
+                "excerpt": item.excerpt or (item.content[:150] + "..." if len(item.content) > 150 else item.content)
+            }
+            result_items.append(result_item)
+        
+        return {
+            "total": total,
+            "items": result_items
+        }
+    
+    
     def update(
         self,
         blog_id: str,

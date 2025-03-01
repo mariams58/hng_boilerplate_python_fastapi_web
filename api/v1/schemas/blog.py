@@ -83,3 +83,24 @@ class CommentUpdateResponseModel(BaseModel):
     status: str
     message: str
     data: CommentData
+
+
+# NEW ADDITIONS BEGIN
+class BlogSearchResult(BaseModel):
+    id: str
+    title: str
+    author: Optional[str]
+    category: Optional[str]
+    published_at: datetime
+    tags: Optional[List[str]]
+    excerpt: Optional[str]
+    
+    class Config:
+        from_attributes = True
+
+
+class BlogSearchResponse(BaseModel):
+    status_code: int
+    total_results: int
+    blogs: List[BlogSearchResult]
+# NEW ADDITIONS END
