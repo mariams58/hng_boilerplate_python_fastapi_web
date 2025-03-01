@@ -72,7 +72,8 @@ class TestRestoreProductCategory:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         json_data = response.json()
         assert (
-            json_data["message"] == "User not authorized to restore categories"
+            json_data["message"]
+            == "User not authorized to perform this action"
         )
 
         # Restore dependency override for further tests

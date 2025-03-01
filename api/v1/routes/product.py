@@ -149,7 +149,7 @@ def soft_delete_product_category(
 
 
 @non_organisation_product.patch(
-    "/categories/{category_name}restore", status_code=status.HTTP_200_OK
+    "/categories/{category_name}/restore", status_code=status.HTTP_200_OK
 )
 def restore_deleted_category(
     category_name: str,
