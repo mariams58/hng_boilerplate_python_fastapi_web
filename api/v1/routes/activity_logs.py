@@ -31,14 +31,20 @@ async def create_activity_log(
 
 
 @activity_logs.get("", response_model=list[ActivityLogResponse])
-async def get_all_activity_logs(current_user: User = Depends(user_service.get_current_super_admin), db: Session = Depends(get_db)):
-    '''Get all activity logs'''
+async def get_all_activity_logs(action: str = None, current_user: User = Depends(user_service.get_current_super_admin), db: Session = Depends(get_db)):
+    '''Get all activity logs, optionally filter for specific action'''
 
-    activity_logs = activity_log_service.fetch_all(db=db)
+    activity_logs = activity_log_service.fetch_all(db=db, action=action)
+
+    if not activity_logs:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No logs found for the specified action"
+            )
 
     return success_response(
         status_code=200,
-        message="Activity logs retrieved successfully",
+        message=(f"{action} " if action else "") + "Activity logs retrieved successfully",
         data=jsonable_encoder(activity_logs)
     )
 
@@ -70,42 +76,6 @@ async def fetch_all_users_activity_log(
         status_code=status.HTTP_200_OK,
         message="Activity logs fetched successfully!",
         data=jsonable_encoder(activity_logs)
-    )
-
-@activity_logs.get("/action/{action}", status_code=status.HTTP_200_OK, response_model=list[ActivityLogResponse])
-async def fetch_all_users_activity_log_based_on_action(
-    action: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(user_service.get_current_super_admin)
-):
-    """
-    Get endpoint for admin users; get all activity logs based on a specific action.
-
-    Args:
-        action (str): the specific action to filter out
-        current_user: the admin user
-        db: the database session object
-
-    Returns:
-        Response: a response object containing details if successful or appropriate errors if not
-    """
-
-
-    action_activity_logs = activity_log_service.fetch_all(
-        db=db,
-        action=action
-    )
-
-    if not action_activity_logs:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No logs found for the specified action"
-            )
-
-    return success_response(
-        status_code=status.HTTP_200_OK,
-        message=f"{action} activity logs fetched successfully!",
-        data=jsonable_encoder(action_activity_logs)
     )
 
 @activity_logs.delete("/{log_id}", status_code=status.HTTP_204_NO_CONTENT)
