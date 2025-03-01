@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The Blog Post Model."""
 
-from sqlalchemy import Column, String, Text, ForeignKey, Boolean, text, Index
+from sqlalchemy import Column, String, Text, ForeignKey, Boolean, text, Index, Integer
 from sqlalchemy.orm import relationship
 from api.v1.models.base_model import BaseTableModel
 
@@ -31,6 +31,7 @@ class Blog(BaseTableModel):
     dislikes = relationship(
         "BlogDislike", back_populates="blog", cascade="all, delete-orphan"
     )
+views = Column(Integer, nullable=False, server_default=text("0"))  # add views column to track views
 
     # Indexes
     __table_args__ = (
