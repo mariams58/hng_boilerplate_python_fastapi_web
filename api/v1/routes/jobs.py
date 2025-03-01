@@ -15,6 +15,7 @@ from api.v1.models.user import User
 from api.v1.models.job import Job, JobApplication
 from api.v1.services.jobs import job_service
 from api.v1.services.job_application import job_application_service, UpdateJobApplication
+from api.v1.services.bookmark import bookmark_service
 from api.utils.pagination import paginated_response
 from api.utils.db_validators import check_model_existence
 import uuid
@@ -268,9 +269,6 @@ async def delete_application(job_id: str,
         HTTP 204 No Content on success
     """
     job_application_service.delete(job_id, application_id, db)
-
-
-
 
 
 
