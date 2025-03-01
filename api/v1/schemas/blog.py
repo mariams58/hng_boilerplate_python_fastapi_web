@@ -19,6 +19,7 @@ class BlogUpdateResponseModel(BaseModel):
     message: str
     data: dict
 
+
 class BlogBaseResponse(BaseModel):
     author_id: str
     title: str
@@ -29,7 +30,7 @@ class BlogBaseResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     views: int
-    
+
     class Config:
         from_attributes = True
 
@@ -39,6 +40,7 @@ class BlogResponse(BlogBaseResponse):
 
 class BlogPostResponse(BlogBaseResponse):
     tags: Optional[str]
+
 
 class BlogLikeDislikeCreate(BaseModel):
     id: str
@@ -64,7 +66,7 @@ class CommentUpdateResponseModel(BaseModel):
     message: str
     data: CommentData
 
-# New search models from feat/blog-search branch
+
 class BlogSearchResult(BaseModel):
     id: str
     title: str
@@ -81,3 +83,4 @@ class BlogSearchResponse(BaseModel):
     status_code: int
     total_results: int
     blogs: List[BlogSearchResult]
+
