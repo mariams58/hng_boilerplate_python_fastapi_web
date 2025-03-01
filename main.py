@@ -58,7 +58,6 @@ origins = [
     "http://localhost:3000",
     "http://localhost:3001",
     settings.ANCHOR_PYTHON_BASE_URL,
-    "https://anchor-python.teams.hng.tech",
 ]
 
 
