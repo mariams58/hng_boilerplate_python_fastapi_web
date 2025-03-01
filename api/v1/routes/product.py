@@ -177,6 +177,33 @@ def restore_deleted_category(
     )
 
 
+@non_organisation_product.delete(
+    "/categories/{category_name}/permanent",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def permanent_delete_product_category(
+    category_name: str,
+    current_user: User = Depends(user_service.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to permanently delete a product category using its unique name.
+
+    This endpoint checks if the current user is an admin. If so, it permanently
+    removes the category from the database.
+    """
+    if not (bool(current_user.is_admin) or bool(current_user.is_superadmin)):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not authorized to perform this action",
+        )
+    ProductCategoryService.permanent_delete(db, category_name)
+    return success_response(
+        status_code=status.HTTP_204_NO_CONTENT,
+        message="Category permanently deleted successfully",
+    )
+
+
 product = APIRouter(
     prefix="/organisations/{org_id}/products", tags=["Products"]
 )
