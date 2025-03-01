@@ -1,9 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field
-
 from api.v1.schemas.comment import CommentData
-
 
 class BlogCreate(BaseModel):
     title: str = Field(..., max_length=100)
@@ -12,17 +10,14 @@ class BlogCreate(BaseModel):
     tags: list[str] = None
     excerpt: str = Field(None, max_length=500)
 
-
 class BlogRequest(BaseModel):
     title: str
     content: str
-
 
 class BlogUpdateResponseModel(BaseModel):
     status: str
     message: str
     data: dict
-
 
 class BlogBaseResponse(BaseModel):
     author_id: str
@@ -38,15 +33,12 @@ class BlogBaseResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
 class BlogResponse(BlogBaseResponse):
     id: str
     tags: Optional[List[str]]
 
-
 class BlogPostResponse(BlogBaseResponse):
     tags: Optional[str]
-
 
 class BlogLikeDislikeCreate(BaseModel):
     id: str
@@ -55,28 +47,24 @@ class BlogLikeDislikeCreate(BaseModel):
     ip_address: Optional[str]
     created_at: datetime
 
-
 class BlogLikeDislikeCreateData(BaseModel):
     object: BlogLikeDislikeCreate
     objects_count: int  # number of likes/dislikes
-
 
 class BlogLikeDislikeResponse(BaseModel):
     status_code: str
     message: str
     data: BlogLikeDislikeCreateData
 
-
 class CommentRequest(BaseModel):
     content: str
-
 
 class CommentUpdateResponseModel(BaseModel):
     status: str
     message: str
     data: CommentData
 
-
+# New search models from feat/blog-search branch
 class BlogSearchResult(BaseModel):
     id: str
     title: str
@@ -88,7 +76,6 @@ class BlogSearchResult(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class BlogSearchResponse(BaseModel):
     status_code: int
