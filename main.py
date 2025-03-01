@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -104,6 +105,18 @@ async def http_exception(request: Request, exc: HTTPException):
             "message": exc.detail,
         },
     )
+    
+@app.exception_handler(RateLimitExceeded)
+async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    """Rate limit exceeded exception handler"""
+    return JSONResponse(
+        status_code=429,
+        content={
+            "status": False,
+            "status_code": exc.status_code,
+            "message": "Too many requests. Please try again in 60 seconds.",
+        },
+    )
 
 
 @app.exception_handler(RequestValidationError)
@@ -127,7 +140,7 @@ async def validation_exception(request: Request, exc: RequestValidationError):
 
 
 @app.exception_handler(IntegrityError)
-async def exception(request: Request, exc: IntegrityError):
+async def integrity_exception(request: Request, exc: IntegrityError):
     """Integrity error exception handlers"""
 
     logger.exception(f"Exception occured; {exc}")
@@ -143,7 +156,7 @@ async def exception(request: Request, exc: IntegrityError):
 
 
 @app.exception_handler(Exception)
-async def exception(request: Request, exc: Exception):
+async def global_exception(request: Request, exc: Exception):
     """Other exception handlers"""
 
     logger.exception(f"Exception occured; {exc}")
