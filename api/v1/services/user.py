@@ -705,7 +705,7 @@ class UserService(Service):
         return user
 
     def require_admin(self, user: User):
-        if not (bool(user.is_admin) or bool(user.is_superadmin)):
+        if not (bool(user.is_superadmin)):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="User not authorized to perform this action",
