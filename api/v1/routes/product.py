@@ -136,11 +136,7 @@ def soft_delete_product_category(
     Returns:
         A success response with the soft-deleted product category data.
     """
-    if not (bool(current_user.is_admin) or bool(current_user.is_superadmin)):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not authorized to perform this action",
-        )
+    user_service.require_admin(current_user)
     ProductCategoryService.soft_delete(db, category_name)
     return success_response(
         status_code=status.HTTP_204_NO_CONTENT,
@@ -162,11 +158,7 @@ def restore_deleted_category(
     Checks if the current user is an admin and, if so, restores the
     category (sets is_deleted to False).
     """
-    if not (bool(current_user.is_admin) or bool(current_user.is_superadmin)):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not authorized to perform this action",
-        )
+    user_service.require_admin(current_user)
     restored_category = ProductCategoryService.restore_deleted(
         db, category_name
     )
@@ -192,11 +184,7 @@ def permanent_delete_product_category(
     This endpoint checks if the current user is an admin. If so, it permanently
     removes the category from the database.
     """
-    if not (bool(current_user.is_admin) or bool(current_user.is_superadmin)):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not authorized to perform this action",
-        )
+    user_service.require_admin(current_user)
     ProductCategoryService.permanent_delete(db, category_name)
     return success_response(
         status_code=status.HTTP_204_NO_CONTENT,
