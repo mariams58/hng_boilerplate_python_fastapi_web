@@ -26,7 +26,7 @@ class SortEnum(Pyenum):
     desc="desc"
 
 class DB:
-    # --------------------- SYSTEM ---------------------
+    # ------------------ SYSTEM -----------------
     def __init__(self):
         self.session = None
 
