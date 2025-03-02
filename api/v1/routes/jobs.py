@@ -323,3 +323,55 @@ async def create_bookmark(
         "status_code": 500,
         "data": {}
     }
+
+
+@jobs.get("/bookmarks", status_code=status.HTTP_200_OK)
+async def get_bookmarked_jobs(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(user_service.get_current_user)]
+):
+    """
+    Fetches all jobs bookmarked by the authenticated user.
+    Args:
+        db: database Session object
+        current_user: currently logged in user
+    Returns:
+        HTTP 200 on success
+    """
+    try:
+        # Use the service to fetch all bookmarked Job objects.
+        jobs_bookmarked = bookmark_service.fetch_all_bookmarked_jobs(db, current_user.id)
+        if jobs_bookmarked:
+            # Format job data into a list of dictionaries.
+            bookmark_data = [
+                {
+                    "title": job.title,
+                    "location": job.location,
+                    "salary": job.salary,
+                    "job_type": job.job_type,
+                    "company_name": job.company_name
+                }
+                for job in jobs_bookmarked
+            ]
+            logger.info(f"Fetched {len(jobs_bookmarked)} bookmarked job(s) for user {current_user.email}")
+            return {
+                "status": "success",
+                "status_code": 200,
+                "message": "Job(s) returned successfully",
+                "data": bookmark_data
+            }
+        else:
+            return {
+                "status": "failure",
+                "status_code": 400,
+                "message": "No jobs saved",
+                "data": {}
+            }
+    except Exception as e:
+        logger.error(f"Error fetching bookmarks: {e}", exc_info=True)
+        return {
+            "status": "failure",
+            "status_code": 500,
+            "message": "Internal Server Error",
+            "data": {}
+        }

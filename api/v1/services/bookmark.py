@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from typing import List
 
-class BookmarkService(Service):
+class BookmarkService():
     """Bookmark Job service functionality"""
     
     @staticmethod
