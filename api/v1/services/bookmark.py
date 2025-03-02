@@ -46,9 +46,10 @@ class BookmarkService(Service):
             user_id (str): The id of the user.
             
         Returns:
-            List[Bookmark]: A list of Bookmark objects.
+            List[Bookmark]: A list of Bookmarked job objects.
         """
         bookmarks = db.query(Bookmark).filter(Bookmark.user_id == user_id).all()
-        return bookmarks
+        jobs = [bookmark.job for bookmark in bookmarks if bookmark.job]
+        return jobs
 
 bookmark_service = BookmarkService()
