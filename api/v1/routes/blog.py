@@ -97,16 +97,10 @@ def search_blogs(
         ))
     
     if author:
-        # The error is here. Assuming the User model has first_name and last_name fields
-        # but the query is failing because there might be a different structure
-        # Let's modify this part to use the correct User model fields
         query = blog_service.db.query(User.id).filter(
             or_(
                 User.first_name.ilike(f"%{author}%"),
                 User.last_name.ilike(f"%{author}%"),
-                # If User has a 'username' attribute instead of name
-                # Uncomment the line below if User has a username field
-                # User.username.ilike(f"%{author}%")
             )
         ).all()
 
