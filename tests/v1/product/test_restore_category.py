@@ -13,14 +13,12 @@ client = TestClient(app)
 # Dummy user objects for testing
 def get_admin_user():
     user = MagicMock()
-    user.is_admin = True
     user.is_superadmin = False
     return user
 
 
 def get_non_admin_user():
     user = MagicMock()
-    user.is_admin = False
     user.is_superadmin = False
     return user
 
